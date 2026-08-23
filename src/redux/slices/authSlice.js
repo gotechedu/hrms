@@ -1,60 +1,254 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { authApi } from '../../Service';
 
-const initialUser = {
-  id: 'EMP-001',
-  name: 'Vikramaditya Sharma',
-  email: 'vikram.sharma@gotechedu.com',
-  role: 'HR Administrator', // 'HR Administrator' | 'Employee' | 'Project Manager'
-  department: 'People Operations & HR',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  employeeId: 'GTE-2024-889',
-  joiningDate: '15 Jan 2022',
-  phone: '+91 98765 43210',
+// Retrieve stored session if available
+const storedToken = localStorage.getItem('gotech_hrms_token') || null;
+let storedUser = null;
+try {
+  const rawUser = localStorage.getItem('gotech_hrms_user');
+  if (rawUser) storedUser = JSON.parse(rawUser);
+} catch (e) {
+  storedUser = null;
+}
+
+// Fallback initial user for demo/offline preview if not logged in
+const defaultFallbackUser = {
+  _id: 'usr-superadmin',
+  name: 'Super Administrator',
+  email: 'admin@gmail.com',
+  role: 'superadmin',
+  status: 'active',
+  employeeProfile: {
+    employeeId: 'GTE-1000',
+    designation: 'Enterprise Superadmin & Owner',
+    department: 'Engineering',
+    location: 'Gurugram, HQ',
+  },
 };
+
+// Async Thunks
+export const loginUser = createAsyncThunk(
+  'auth/loginUser',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await authApi.login(credentials);
+      if (response.token) {
+        localStorage.setItem('gotech_hrms_token', response.token);
+        localStorage.setItem('gotech_hrms_user', JSON.stringify(response.user));
+      }
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Login failed. Please check your credentials.');
+    }
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  'auth/logoutUser',
+  async (_, { dispatch }) => {
+    try {
+      await authApi.logout();
+    } catch (e) {
+      console.warn('Logout API error:', e.message);
+    } finally {
+      dispatch(authSlice.actions.logout());
+    }
+    return { success: true };
+  }
+);
+
+export const fetchCurrentUser = createAsyncThunk(
+  'auth/fetchCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authApi.getMe();
+      if (response.user) {
+        localStorage.setItem('gotech_hrms_user', JSON.stringify(response.user));
+      }
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to authenticate session.');
+    }
+  }
+);
+
+export const requestForgotPassword = createAsyncThunk(
+  'auth/requestForgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await authApi.forgotPassword(email);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to request password reset code.');
+    }
+  }
+);
+
+export const verifyOtpCode = createAsyncThunk(
+  'auth/verifyOtpCode',
+  async ({ email, otp }, { rejectWithValue }) => {
+    try {
+      const response = await authApi.verifyOtp(email, otp);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Invalid or expired OTP code.');
+    }
+  }
+);
+
+export const resetPasswordWithOtp = createAsyncThunk(
+  'auth/resetPasswordWithOtp',
+  async ({ email, otp, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await authApi.resetPassword(email, otp, newPassword);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to reset password.');
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    isAuthenticated: true,
-    user: initialUser,
+    token: storedToken,
+    user: storedUser || defaultFallbackUser,
+    isAuthenticated: Boolean(storedToken || storedUser),
     loading: false,
     error: null,
-    passwordResetSent: false,
+    forgotPasswordSuccess: false,
+    otpVerified: false,
+    resetPasswordSuccess: false,
+    demoOtp: null,
   },
   reducers: {
-    login: (state, action) => {
-      const { email, role = 'HR Administrator' } = action.payload;
-      state.isAuthenticated = true;
-      state.user = {
-        ...initialUser,
-        email: email || initialUser.email,
-        role: role,
-        name: role === 'Employee' ? 'Aarav Patel' : 'Vikramaditya Sharma',
-      };
-      state.error = null;
-    },
     logout: (state) => {
-      state.isAuthenticated = false;
+      localStorage.removeItem('gotech_hrms_token');
+      localStorage.removeItem('gotech_hrms_user');
+      state.token = null;
       state.user = null;
+      state.isAuthenticated = false;
+      state.loading = false;
+      state.error = null;
     },
     switchRole: (state, action) => {
       if (state.user) {
-        state.user.role = action.payload;
+        state.user.role = action.payload.toLowerCase();
       }
     },
-    requestPasswordReset: (state) => {
-      state.passwordResetSent = true;
+    clearAuthError: (state) => {
+      state.error = null;
     },
-    clearPasswordReset: (state) => {
-      state.passwordResetSent = false;
+    resetForgotState: (state) => {
+      state.forgotPasswordSuccess = false;
+      state.otpVerified = false;
+      state.resetPasswordSuccess = false;
+      state.demoOtp = null;
+      state.error = null;
     },
     updateUserAvatar: (state, action) => {
       if (state.user) {
         state.user.avatar = action.payload;
+        if (state.user.employeeProfile) {
+          state.user.employeeProfile.avatar = action.payload;
+        }
       }
     },
   },
+  extraReducers: (builder) => {
+    builder
+      // Login
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.error = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Login authentication failed';
+      })
+
+      // Logout
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.error = null;
+      })
+
+      // Fetch Me
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
+      .addCase(fetchCurrentUser.rejected, (state) => {
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+      })
+
+      // Forgot Password
+      .addCase(requestForgotPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.forgotPasswordSuccess = false;
+      })
+      .addCase(requestForgotPassword.fulfilled, (state, action) => {
+        state.loading = false;
+        state.forgotPasswordSuccess = true;
+        state.demoOtp = action.payload.otp || null;
+        state.error = null;
+      })
+      .addCase(requestForgotPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Verify OTP
+      .addCase(verifyOtpCode.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyOtpCode.fulfilled, (state) => {
+        state.loading = false;
+        state.otpVerified = true;
+        state.error = null;
+      })
+      .addCase(verifyOtpCode.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Reset Password
+      .addCase(resetPasswordWithOtp.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resetPasswordWithOtp.fulfilled, (state) => {
+        state.loading = false;
+        state.resetPasswordSuccess = true;
+        state.error = null;
+      })
+      .addCase(resetPasswordWithOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+  },
 });
 
-export const { login, logout, switchRole, requestPasswordReset, clearPasswordReset, updateUserAvatar } = authSlice.actions;
+export const {
+  logout,
+  switchRole,
+  clearAuthError,
+  resetForgotState,
+  updateUserAvatar,
+} = authSlice.actions;
+
 export default authSlice.reducer;

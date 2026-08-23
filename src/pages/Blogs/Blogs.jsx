@@ -1,328 +1,479 @@
-import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
-  Newspaper,
+  FileText,
   Plus,
+  Search,
   Calendar,
   Clock,
-  Tag,
-  User,
+  Trash2,
+  Edit2,
   Sparkles,
-  ArrowRight,
-  BookOpen,
+  CheckCircle2,
+  X,
+  RefreshCw,
+  Eye,
+  Tag,
+  ArrowUpRight,
 } from 'lucide-react';
-import { addPost, deletePost, setSelectedCategory } from '../../redux/slices/blogSlice';
-import Modal from '../../Components/Common/Modal';
-
-const categories = ['All', 'Company Update', 'HR & People Ops', 'Engineering & Tech'];
+import { blogApi } from '../../Service';
 
 export default function Blogs() {
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { posts, selectedCategory } = useSelector((state) => state.blogs);
-
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
+  const [editingBlog, setEditingBlog] = useState(null);
 
-  const [form, setForm] = useState({
+  const userRole = (user?.role || '').toLowerCase();
+  const canManage = ['superadmin', 'admin', 'hr', 'manager', 'teamlead', 'employee'].includes(userRole);
+
+  const initialForm = {
     title: '',
-    category: 'Company Update',
-    author: 'Vikramaditya Sharma',
-    authorRole: 'HR Administrator',
-    summary: '',
+    category: 'Technology',
+    readTime: '5 min read',
+    coverImage: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80',
+    badge: 'Featured Insight',
+    description: '',
     content: '',
-    tagsInput: 'Announcement, Policy',
-  });
+    tags: 'AI, Next.js, Engineering, Cloud',
+    status: 'Published',
+  };
+  const [form, setForm] = useState(initialForm);
 
-  const filteredPosts = posts.filter((p) => {
-    if (selectedCategory === 'All') return true;
-    return p.category === selectedCategory;
-  });
-
-  const handlePublish = (e) => {
-    e.preventDefault();
-    const tags = form.tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
-    dispatch(
-      addPost({
-        title: form.title,
-        category: form.category,
-        author: user?.name || form.author,
-        authorRole: user?.role || form.authorRole,
-        summary: form.summary,
-        content: form.content,
-        tags,
-      })
-    );
-    setIsModalOpen(false);
-    setForm({
-      title: '',
-      category: 'Company Update',
-      author: 'Vikramaditya Sharma',
-      authorRole: 'HR Administrator',
-      summary: '',
-      content: '',
-      tagsInput: 'Announcement, Policy',
-    });
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await blogApi.getBlogs({
+        category: selectedCategory,
+        search: searchQuery,
+      });
+      if (res && res.blogs) {
+        setBlogs(res.blogs);
+      }
+    } catch (err) {
+      console.error('Fetch Blogs Error:', err);
+      setError(err.message || 'Failed to load blogs.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchBlogs();
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchBlogs();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSaveBlog = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingBlog) {
+        await blogApi.updateBlog(editingBlog._id, form);
+      } else {
+        await blogApi.createBlog({
+          ...form,
+          author: {
+            name: user?.name || 'Editorial Team',
+            role: user?.role?.toUpperCase() || 'Tech Author',
+            initials: (user?.name || 'ET').split(' ').map((n) => n[0]).join('').substring(0, 2),
+            avatarBg: 'bg-blue-600',
+          },
+        });
+      }
+      setIsModalOpen(false);
+      setEditingBlog(null);
+      setForm(initialForm);
+      fetchBlogs();
+    } catch (err) {
+      alert(err.message || 'Error saving blog publication');
+    }
+  };
+
+  const handleDelete = async (id, title) => {
+    if (window.confirm(`Delete blog post '${title}'?`)) {
+      try {
+        await blogApi.deleteBlog(id);
+        fetchBlogs();
+      } catch (err) {
+        alert(err.message || 'Error deleting blog');
+      }
+    }
+  };
+
+  const openEditModal = (b) => {
+    setEditingBlog(b);
+    setForm({
+      ...b,
+      tags: Array.isArray(b.tags) ? b.tags.join(', ') : b.tags,
+    });
+    setIsModalOpen(true);
+  };
+
+  const categories = ['All', 'AI', 'Cloud', 'Technology', 'Cybersecurity', 'Education'];
+
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-16">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">
-            <Newspaper size={13} /> Corporate Communications
+            <FileText size={13} /> Corporate Insights & Thought Leadership
           </span>
           <h1 className="mt-2 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Company Bulletins & Tech Blogs
+            Publications & Blog Hub
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Internal corporate announcements, HR benefits handbooks, and engineering architecture briefings
+            Create, curate, and publish technical insights displayed live on the official website blog feed
           </p>
         </div>
 
-        {user?.role === 'HR Administrator' && (
+        {canManage && (
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95"
+            onClick={() => {
+              setEditingBlog(null);
+              setForm(initialForm);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95 cursor-pointer"
           >
             <Plus size={16} />
-            <span>Publish Announcement</span>
+            <span>Write New Article</span>
           </button>
         )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => dispatch(setSelectedCategory(cat))}
-            className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
-              selectedCategory === cat
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Stats Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs">
+          <span className="text-[11px] font-mono font-bold uppercase text-slate-400">Total Publications</span>
+          <p className="text-xl font-heading font-black text-slate-900 mt-1">{blogs.length}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs">
+          <span className="text-[11px] font-mono font-bold uppercase text-emerald-600">Published Live</span>
+          <p className="text-xl font-heading font-black text-emerald-600 mt-1">
+            {blogs.filter((b) => b.status === 'Published').length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs">
+          <span className="text-[11px] font-mono font-bold uppercase text-blue-600">Official Portal</span>
+          <p className="text-xs font-bold text-blue-700 uppercase mt-2 font-mono">/blog</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs">
+          <span className="text-[11px] font-mono font-bold uppercase text-purple-600">Sync Engine</span>
+          <p className="text-xs font-bold text-purple-700 uppercase mt-2 font-mono">Real-Time MongoDB</p>
+        </div>
       </div>
 
-      {/* Blog Cards Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredPosts.map((post) => (
-          <div
-            key={post.id}
-            className="group rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg flex flex-col justify-between"
-          >
-            <div>
-              {/* Cover Image */}
-              <div className="h-44 w-full overflow-hidden relative bg-slate-100">
-                <img
-                  src={post.cover}
-                  alt={post.title}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <span className="absolute top-3 left-3 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider">
-                  {post.category}
-                </span>
+      {/* Filter & Search Bar */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search articles by title, description, or tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                  selectedCategory === cat
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Blogs Grid */}
+      {loading ? (
+        <div className="py-20 text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="mt-3 text-xs text-slate-500 font-mono">Loading blog catalog from database...</p>
+        </div>
+      ) : blogs.length === 0 ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-2xs">
+          <FileText size={36} className="mx-auto text-slate-300 mb-3" />
+          <h3 className="text-base font-bold text-slate-800">No Publications Found</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Click "Write New Article" above to draft and publish industry insights.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {blogs.map((blog) => (
+            <div
+              key={blog._id}
+              className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg"
+            >
+              <div>
+                {/* Cover Image */}
+                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={blog.coverImage || 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=800&q=80'}
+                    alt={blog.title}
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-500"
+                  />
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="rounded-md bg-white/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase text-slate-800 shadow-xs">
+                      {blog.category}
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-xs shadow-xs ${
+                        blog.status === 'Published'
+                          ? 'bg-emerald-500/90 text-white'
+                          : 'bg-amber-500/90 text-white'
+                      }`}
+                    >
+                      {blog.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={11} /> {blog.date}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} /> {blog.readTime}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-2 font-heading text-base font-bold text-slate-900 group-hover:text-blue-600 transition line-clamp-2">
+                    {blog.title}
+                  </h3>
+
+                  <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                    {blog.description}
+                  </p>
+
+                  {/* Tags */}
+                  <div className="mt-3.5 flex flex-wrap gap-1">
+                    {(blog.tags || []).slice(0, 3).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Body */}
-              <div className="p-5">
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono mb-2">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} /> {post.date}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} /> {post.readTime}
+              {/* Author Strip & Actions */}
+              <div className="border-t border-slate-100 p-4 bg-slate-50/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">
+                    {blog.author?.initials || 'ET'}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]">
+                    {blog.author?.name || 'Editorial Team'}
                   </span>
                 </div>
 
-                <h3 className="font-heading text-base font-bold text-slate-900 line-clamp-2 group-hover:text-blue-600 transition">
-                  {post.title}
-                </h3>
-
-                <p className="mt-2 text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                  {post.summary}
-                </p>
-
-                {/* Tags */}
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {post.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-600"
+                {canManage && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(blog)}
+                      className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition bg-white cursor-pointer"
+                      title="Edit Article"
                     >
-                      #{t}
-                    </span>
-                  ))}
-                </div>
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(blog._id, blog.title)}
+                      className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:border-rose-400 hover:text-rose-600 transition bg-white cursor-pointer"
+                      title="Delete Article"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Author Footer */}
-            <div className="border-t border-slate-100 p-4 bg-slate-50/50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <img
-                  src={post.authorAvatar}
-                  alt={post.author}
-                  className="h-7 w-7 rounded-full object-cover border border-slate-200"
-                />
-                <div>
-                  <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">{post.author}</p>
-                  <p className="text-[9px] text-slate-400 truncate">{post.authorRole}</p>
-                </div>
-              </div>
-
+      {/* CREATE / EDIT MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                {editingBlog ? 'Edit Technical Article' : 'Compose New Thought Leadership Article'}
+              </h3>
               <button
                 type="button"
-                onClick={() => setSelectedPost(post)}
-                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100"
               >
-                <span>Read Full</span>
-                <ArrowRight size={13} />
+                <X size={18} />
               </button>
             </div>
+
+            <form onSubmit={handleSaveBlog} className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Article Headline Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder="e.g. Next.js 16 App Router vs Traditional Single Page Apps"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Category *
+                  </label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="AI">AI</option>
+                    <option value="Cloud">Cloud</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Cybersecurity">Cybersecurity</option>
+                    <option value="Education">Education</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Estimated Read Time
+                  </label>
+                  <input
+                    type="text"
+                    value={form.readTime}
+                    onChange={(e) => setForm({ ...form, readTime: e.target.value })}
+                    placeholder="5 min read"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Cover Image URL
+                </label>
+                <input
+                  type="text"
+                  value={form.coverImage}
+                  onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  placeholder="Next.js 16, React 19, Performance, Web Architecture"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Executive Excerpt / Short Summary *
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="A concise 2-sentence teaser summarizing the core insight..."
+                  className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Article Body / Deep-Dive Content
+                </label>
+                <textarea
+                  rows={4}
+                  value={form.content}
+                  onChange={(e) => setForm({ ...form, content: e.target.value })}
+                  placeholder="Full article content, benchmarks, code references, and conclusions..."
+                  className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 cursor-pointer"
+                >
+                  {editingBlog ? 'Save Changes' : 'Publish Article Live'}
+                </button>
+              </div>
+            </form>
           </div>
-        ))}
-      </div>
-
-      {/* Publish Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Publish Internal Bulletin"
-        subtitle="Broadcast company newsletters, policy changes, and engineering blogs"
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handlePublish} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-              Article Headline *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Q3 Health Insurance Renewal & Outpatient Benefits"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                Category *
-              </label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
-              >
-                <option value="Company Update">Company Update</option>
-                <option value="HR & People Ops">HR & People Ops</option>
-                <option value="Engineering & Tech">Engineering & Tech</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                Tags (comma separated)
-              </label>
-              <input
-                type="text"
-                value={form.tagsInput}
-                onChange={(e) => setForm({ ...form, tagsInput: e.target.value })}
-                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-              Brief Summary *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="1-2 sentences summarizing key takeaway"
-              value={form.summary}
-              onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-              Full Content *
-            </label>
-            <textarea
-              rows={5}
-              required
-              placeholder="Write the full announcement or tech article..."
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
-            />
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 hover:bg-blue-700"
-            >
-              Publish to Organization
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Read Full Post Modal */}
-      {selectedPost && (
-        <Modal
-          isOpen={true}
-          onClose={() => setSelectedPost(null)}
-          title={selectedPost.title}
-          subtitle={`Published by ${selectedPost.author} on ${selectedPost.date}`}
-          maxWidth="max-w-3xl"
-        >
-          <div className="space-y-4">
-            <img
-              src={selectedPost.cover}
-              alt={selectedPost.title}
-              className="h-56 w-full object-cover rounded-2xl border border-slate-200"
-            />
-
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-              <span className="rounded-full bg-blue-50 px-3 py-1 font-bold text-blue-700">
-                {selectedPost.category}
-              </span>
-              <span>•</span>
-              <span>{selectedPost.readTime}</span>
-            </div>
-
-            <p className="text-sm font-semibold text-slate-900 leading-relaxed">
-              {selectedPost.summary}
-            </p>
-
-            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed space-y-3 pt-2 border-t border-slate-100">
-              <p>{selectedPost.content}</p>
-            </div>
-          </div>
-        </Modal>
+        </div>
       )}
     </div>
   );
