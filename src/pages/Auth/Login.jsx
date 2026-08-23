@@ -1,14 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, Sparkles, ShieldCheck } from 'lucide-react';
-import { loginUser, clearAuthError } from '../../redux/slices/authSlice';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertCircle,
+  Sparkles,
+  ShieldCheck,
+} from "lucide-react";
+import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
 
 const DEMO_QUICK_FILLS = [
-  { label: 'Superadmin', email: 'admin@gmail.com', password: 'admin123', roleBadge: '👑 Superadmin' },
-  { label: 'HR Admin', email: 'vikram.sharma@gotechedu.com', password: 'Password@123', roleBadge: '💼 HR Head' },
-  { label: 'Manager', email: 'priya.nair@gotechedu.com', password: 'Password@123', roleBadge: '📊 Manager' },
-  { label: 'Dev Staff', email: 'aarav.patel@gotechedu.com', password: 'Password@123', roleBadge: '💻 Employee' },
+  {
+    label: "Superadmin",
+    email: "admin@gmail.com",
+    password: "admin123",
+    roleBadge: "👑 Superadmin",
+  },
+  {
+    label: "HR Admin",
+    email: "vikram.sharma@gotechedu.com",
+    password: "Password@123",
+    roleBadge: "💼 HR Head",
+  },
+  {
+    label: "Manager",
+    email: "priya.nair@gotechedu.com",
+    password: "Password@123",
+    roleBadge: "📊 Manager",
+  },
+  {
+    label: "Dev Staff",
+    email: "aarav.patel@gotechedu.com",
+    password: "Password@123",
+    roleBadge: "💻 Employee",
+  },
 ];
 
 export default function Login() {
@@ -18,8 +47,8 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: 'admin@gmail.com',
-    password: 'admin123',
+    email: "admin@gmail.com",
+    password: "admin123",
   });
 
   const handleSubmit = async (e) => {
@@ -30,11 +59,11 @@ export default function Login() {
       loginUser({
         email: formData.email,
         password: formData.password,
-      })
+      }),
     );
 
     if (loginUser.fulfilled.match(result)) {
-      navigate('/');
+      navigate("/");
     }
   };
 
@@ -70,16 +99,22 @@ export default function Login() {
         <div className="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xl shadow-slate-200/60">
           {/* Header text */}
           <div className="mb-6 pb-4 border-b border-slate-100">
-            <h3 className="font-heading text-lg font-bold text-slate-900">Sign In to Workstation</h3>
+            <h3 className="font-heading text-lg font-bold text-slate-900">
+              Sign In to Workstation
+            </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Enter your corporate credentials. Roles and permissions are automatically authenticated.
+              Enter your corporate credentials. Roles and permissions are
+              automatically authenticated.
             </p>
           </div>
 
           {/* Error Alert Box */}
           {error && (
             <div className="mb-5 flex items-start gap-2.5 rounded-2xl bg-rose-50 border border-rose-200 p-3.5 text-xs text-rose-700 animate-fadeIn">
-              <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+              <AlertCircle
+                size={16}
+                className="text-rose-500 shrink-0 mt-0.5"
+              />
               <span className="font-medium">{error}</span>
             </div>
           )}
@@ -92,12 +127,17 @@ export default function Login() {
                 Work Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Mail
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={16}
+                />
                 <input
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="name@gotechedu.com"
                   className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition"
                 />
@@ -118,12 +158,17 @@ export default function Login() {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Lock
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={16}
+                />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   placeholder="••••••••••••"
                   className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition"
                 />
@@ -156,32 +201,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Pre-fill Chips */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                <Sparkles size={12} className="text-amber-500" /> Quick Demo Fill:
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMO_QUICK_FILLS.map((item) => (
-                <button
-                  key={item.email}
-                  type="button"
-                  onClick={() => handleQuickFill(item)}
-                  className="flex flex-col items-start rounded-xl border border-slate-200 bg-slate-50/80 p-2 text-left hover:border-blue-400 hover:bg-blue-50/60 transition group cursor-pointer"
-                >
-                  <span className="text-[11px] font-bold text-slate-800 group-hover:text-blue-700">
-                    {item.roleBadge}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500 truncate w-full">
-                    {item.email}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Footer Security Badge */}
