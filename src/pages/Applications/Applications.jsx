@@ -20,8 +20,10 @@ import {
   Award,
   List,
   LayoutGrid,
+  Plus,
+  X,
 } from 'lucide-react';
-import { applicationApi, courseApi } from '../../Service';
+import { applicationApi, courseApi, jobApi } from '../../Service';
 
 export default function Applications() {
   const { user } = useSelector((state) => state.auth);
@@ -39,6 +41,49 @@ export default function Applications() {
   const [selectedCourseStatus, setSelectedCourseStatus] = useState('All');
   const [courseSearch, setCourseSearch] = useState('');
   const [loadingCourses, setLoadingCourses] = useState(true);
+
+  // Candidate Registration Modals State
+  const [isAddJobModalOpen, setIsAddJobModalOpen] = useState(false);
+  const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
+
+  const initialJobForm = {
+    jobTitle: '',
+    department: 'Engineering',
+    name: '',
+    email: '',
+    phone: '',
+    experience: '1–3 Years',
+    currentCompany: '',
+    expectedCTC: '₹12L PA',
+    noticePeriod: '30 Days',
+    resumeUrl: '',
+    portfolioUrl: '',
+    coverLetter: '',
+    stage: 'Applied',
+    rating: 4,
+    notes: '',
+  };
+  const [jobForm, setJobForm] = useState(initialJobForm);
+
+  const initialCourseForm = {
+    courseTitle: '',
+    studentName: '',
+    email: '',
+    phone: '',
+    collegeOrCompany: '',
+    qualification: 'B.Tech / MCA / BCA',
+    batch: 'Current Cohort 2026',
+    feesStatus: 'Unpaid',
+    feesAmount: 0,
+    experienceLevel: 'Student / Fresher',
+    learningGoal: 'Career Transition / Upskilling',
+    modePreference: 'Live Online Labs',
+    status: 'Pending',
+    notes: '',
+  };
+  const [courseForm, setCourseForm] = useState(initialCourseForm);
 
   const userRole = (user?.role || '').toLowerCase();
   const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
@@ -98,6 +143,47 @@ export default function Applications() {
     }, 300);
     return () => clearTimeout(timer);
   }, [courseSearch]);
+
+  useEffect(() => {
+    // Pre-fetch active jobs & courses for the Add Candidate modal select options
+    const fetchOptions = async () => {
+      try {
+        const [jobsRes, coursesRes] = await Promise.all([
+          jobApi.getJobs({ status: 'Active' }),
+          courseApi.getCourses({ status: 'Active' }),
+        ]);
+        if (jobsRes && jobsRes.jobs) setAvailableJobs(jobsRes.jobs);
+        if (coursesRes && coursesRes.courses) setAvailableCourses(coursesRes.courses);
+      } catch (e) {
+        console.error('Fetch modal options error:', e);
+      }
+    };
+    fetchOptions();
+  }, []);
+
+  const handleCreateJobCandidate = async (e) => {
+    e.preventDefault();
+    try {
+      await applicationApi.submitJobApplication(jobForm);
+      setIsAddJobModalOpen(false);
+      setJobForm(initialJobForm);
+      fetchJobApps();
+    } catch (err) {
+      alert(err.message || 'Error registering job candidate');
+    }
+  };
+
+  const handleCreateCourseCandidate = async (e) => {
+    e.preventDefault();
+    try {
+      await courseApi.submitCourseApplication(courseForm);
+      setIsAddCourseModalOpen(false);
+      setCourseForm(initialCourseForm);
+      fetchCourseApps();
+    } catch (err) {
+      alert(err.message || 'Error enrolling student candidate');
+    }
+  };
 
   const handleAdvanceJobStage = async (id, currentStage) => {
     const nextStages = {
@@ -174,7 +260,25 @@ export default function Applications() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {activeTab === 'jobs' ? (
+            <button
+              type="button"
+              onClick={() => setIsAddJobModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition cursor-pointer"
+            >
+              <Plus size={15} /> Add Job Candidate
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAddCourseModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition cursor-pointer"
+            >
+              <Plus size={15} /> Enroll Course Candidate
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -183,7 +287,7 @@ export default function Applications() {
             }}
             className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
           >
-            <RefreshCw size={14} /> Refresh Roster
+            <RefreshCw size={14} /> Refresh
           </button>
         </div>
       </div>
@@ -716,6 +820,387 @@ export default function Applications() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Add Job Candidate Modal */}
+      {isAddJobModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Register Job Candidate Application
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Enter candidate details into the talent acquisition pipeline.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddJobModalOpen(false)}
+                className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateJobCandidate} className="mt-5 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Candidate Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Vikram Sharma"
+                    value={jobForm.name}
+                    onChange={(e) => setJobForm({ ...jobForm, name: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="vikram@example.com"
+                    value={jobForm.email}
+                    onChange={(e) => setJobForm({ ...jobForm, email: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={jobForm.phone}
+                    onChange={(e) => setJobForm({ ...jobForm, phone: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Applying For Job Opening *</label>
+                  <input
+                    type="text"
+                    required
+                    list="jobs-datalist"
+                    placeholder="e.g. Full-Stack Developer"
+                    value={jobForm.jobTitle}
+                    onChange={(e) => setJobForm({ ...jobForm, jobTitle: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                  <datalist id="jobs-datalist">
+                    {availableJobs.map((j) => (
+                      <option key={j._id} value={j.title} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Department</label>
+                  <select
+                    value={jobForm.department}
+                    onChange={(e) => setJobForm({ ...jobForm, department: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Engineering">Engineering</option>
+                    <option value="AI & Data Science">AI & Data Science</option>
+                    <option value="Cloud & DevOps">Cloud & DevOps</option>
+                    <option value="Product & Design">Product & Design</option>
+                    <option value="Marketing & Growth">Marketing & Growth</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Experience</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 3 Years"
+                    value={jobForm.experience}
+                    onChange={(e) => setJobForm({ ...jobForm, experience: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Expected CTC</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ₹15L PA"
+                    value={jobForm.expectedCTC}
+                    onChange={(e) => setJobForm({ ...jobForm, expectedCTC: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Notice Period</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 30 Days"
+                    value={jobForm.noticePeriod}
+                    onChange={(e) => setJobForm({ ...jobForm, noticePeriod: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Resume / CV Link URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/..."
+                    value={jobForm.resumeUrl}
+                    onChange={(e) => setJobForm({ ...jobForm, resumeUrl: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Portfolio / LinkedIn URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/in/..."
+                    value={jobForm.portfolioUrl}
+                    onChange={(e) => setJobForm({ ...jobForm, portfolioUrl: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Initial Pipeline Stage</label>
+                  <select
+                    value={jobForm.stage}
+                    onChange={(e) => setJobForm({ ...jobForm, stage: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Applied">Applied</option>
+                    <option value="Screening">Screening</option>
+                    <option value="Technical Round 2">Technical Round 2</option>
+                    <option value="Offer Sent">Offer Sent</option>
+                    <option value="Hired">Hired</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Internal Notes / Feedback</label>
+                  <input
+                    type="text"
+                    placeholder="HR Screening comments..."
+                    value={jobForm.notes}
+                    onChange={(e) => setJobForm({ ...jobForm, notes: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddJobModalOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-blue-600 px-5 py-2 font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition"
+                >
+                  Register Candidate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Course Candidate Modal */}
+      {isAddCourseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Enroll Course Student Candidate
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Register candidate for Learning Hub programs and industry cohorts.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddCourseModalOpen(false)}
+                className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCourseCandidate} className="mt-5 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Aarav Patel"
+                    value={courseForm.studentName}
+                    onChange={(e) => setCourseForm({ ...courseForm, studentName: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="aarav@gmail.com"
+                    value={courseForm.email}
+                    onChange={(e) => setCourseForm({ ...courseForm, email: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={courseForm.phone}
+                    onChange={(e) => setCourseForm({ ...courseForm, phone: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Enrolling For Course *</label>
+                  <input
+                    type="text"
+                    required
+                    list="courses-datalist"
+                    placeholder="e.g. Full-Stack Web Development"
+                    value={courseForm.courseTitle}
+                    onChange={(e) => setCourseForm({ ...courseForm, courseTitle: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                  <datalist id="courses-datalist">
+                    {availableCourses.map((c) => (
+                      <option key={c._id} value={c.title} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Cohort Batch</label>
+                  <input
+                    type="text"
+                    placeholder="Fall 2026 Batch"
+                    value={courseForm.batch}
+                    onChange={(e) => setCourseForm({ ...courseForm, batch: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Qualification</label>
+                  <input
+                    type="text"
+                    placeholder="B.Tech / MCA / BCA"
+                    value={courseForm.qualification}
+                    onChange={(e) => setCourseForm({ ...courseForm, qualification: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Fees Status</label>
+                  <select
+                    value={courseForm.feesStatus}
+                    onChange={(e) => setCourseForm({ ...courseForm, feesStatus: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Paid">Paid</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Scholarship">Scholarship / Free</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Fees Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={courseForm.feesAmount}
+                    onChange={(e) => setCourseForm({ ...courseForm, feesAmount: Number(e.target.value) })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Learning Mode</label>
+                  <select
+                    value={courseForm.modePreference}
+                    onChange={(e) => setCourseForm({ ...courseForm, modePreference: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Live Online Labs">Live Online Labs</option>
+                    <option value="Hybrid Campus">Hybrid Campus</option>
+                    <option value="Self-Paced Mentorship">Self-Paced Mentorship</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Enrollment Status</label>
+                  <select
+                    value={courseForm.status}
+                    onChange={(e) => setCourseForm({ ...courseForm, status: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Screening">Screening</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Enrolled">Enrolled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddCourseModalOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-blue-600 px-5 py-2 font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition"
+                >
+                  Enroll Student
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

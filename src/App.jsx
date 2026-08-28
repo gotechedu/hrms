@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
 
 // Layout
 import MainLayout from './Components/Layout/MainLayout';
@@ -29,6 +30,20 @@ import Blogs from './pages/Blogs/Blogs';
 import Profile from './pages/Profile/Profile';
 import Chat from './pages/Chat/Chat';
 
+// Payroll Module Pages
+import PayRol from './pages/PayRol/PayRol';
+import OrgEmployeePayRol from './pages/PayRol/OrgEmployeePayRol';
+import StudenPayRol from './pages/PayRol/StudenPayRol';
+import ItSolutionPayRol from './pages/PayRol/ItSolutionPayRol';
+
+// Settings & Administration Pages
+import Settings from './pages/Settings/Settings';
+import ManageRole from './pages/Settings/ManageRole';
+import ManagePermission from './pages/Settings/ManagePermission';
+
+// Recycle Bin Page
+import RecycleBin from './pages/RecycleBin/RecycleBin';
+
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -41,6 +56,41 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#0f172a',
+            color: '#f8fafc',
+            fontSize: '13px',
+            fontWeight: '600',
+            borderRadius: '12px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
+            padding: '12px 16px',
+            border: '1px solid #1e293b',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#ffffff',
+            },
+            style: {
+              border: '1px solid #059669',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#ffffff',
+            },
+            style: {
+              border: '1px solid #dc2626',
+            },
+          },
+        }}
+      />
       <Routes>
         {/* Auth Routes */}
         <Route path="/auth/login" element={<Login />} />
@@ -73,15 +123,33 @@ export default function App() {
           <Route path="projects" element={<Projects />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="holidays" element={<Holiday />} />
+          
+          {/* Payroll Routes */}
+          <Route path="payroll" element={<PayRol />} />
+          <Route path="payroll/org-employees" element={<OrgEmployeePayRol />} />
+          <Route path="payroll/students" element={<StudenPayRol />} />
+          <Route path="payroll/it-solutions" element={<ItSolutionPayRol />} />
+
+          {/* Learning & Career */}
           <Route path="learninghub" element={<LearningHub />} />
           <Route path="learninghub/:id" element={<CourseDetails />} />
           <Route path="careerpost" element={<CareerPost />} />
           <Route path="careerpost/:id" element={<JobDetails />} />
           <Route path="applications" element={<Applications />} />
           <Route path="applications/:id" element={<ApplicationDetails />} />
+
+          {/* Communication & Policy */}
           <Route path="accusations" element={<Accusations />} />
           <Route path="blogs" element={<Blogs />} />
           <Route path="profile" element={<Profile />} />
+
+          {/* Administration & Settings */}
+          <Route path="settings" element={<Settings />} />
+          <Route path="settings/roles" element={<ManageRole />} />
+          <Route path="settings/permissions" element={<ManagePermission />} />
+          
+          {/* Universal Recycle Bin */}
+          <Route path="recycle-bin" element={<RecycleBin />} />
         </Route>
 
         {/* Fallback Catch-All */}

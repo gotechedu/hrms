@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -22,12 +22,16 @@ import {
   LogOut,
   Building2,
   Shield,
+  Settings,
+  DollarSign,
+  Trash2,
+  Sliders,
 } from "lucide-react";
 import {
   toggleSidebar,
   setMobileSidebarOpen,
 } from "../../redux/slices/uiSlice";
-import { logoutUser } from "../../redux/slices/authSlice";
+import { logoutUser, fetchCurrentUser } from "../../redux/slices/authSlice";
 
 export default function Sidebar() {
   const location = useLocation();
@@ -37,31 +41,114 @@ export default function Sidebar() {
   );
   const { user } = useSelector((state) => state.auth);
 
+  // Live Auto-Refresh: Listen for matrix & role updates
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      dispatch(fetchCurrentUser());
+    };
+
+    window.addEventListener("gotech_permissions_updated", handlePermissionsUpdated);
+    window.addEventListener("focus", handlePermissionsUpdated);
+
+    return () => {
+      window.removeEventListener("gotech_permissions_updated", handlePermissionsUpdated);
+      window.removeEventListener("focus", handlePermissionsUpdated);
+    };
+  }, [dispatch]);
+
   const role = (user?.role || "employee").toLowerCase();
   const isSuperadmin = role === "superadmin";
-  const isAdminOrHr = isSuperadmin || ["admin", "hr"].includes(role);
-  const isManagerOrLead =
-    isSuperadmin || ["manager", "teamlead"].includes(role);
+  const permissions = user?.permissions || [];
+
+  const hasPermission = (permissionKeys) => {
+    if (isSuperadmin) return true;
+    if (!permissionKeys) return true;
+    const keys = Array.isArray(permissionKeys) ? permissionKeys : [permissionKeys];
+    return keys.some((k) => permissions.includes(k));
+  };
 
   const navSections = [
     {
       group: "Main Overview",
-      items: [{ name: "Dashboard", path: "/", icon: LayoutDashboard }],
-    },
-    {
-      group: "People & Attendance",
       items: [
-        { name: "Employee Directory", path: "/employees", icon: Users },
-        { name: "Attendance & Leaves", path: "/attendance", icon: Clock },
-        { name: "Timesheets", path: "/timesheets", icon: FileSpreadsheet },
+        {
+          name: "Dashboard",
+          path: "/",
+          icon: LayoutDashboard,
+          permission: ["manage_dashboard"],
+        },
+        {
+          name: "Employee Directory",
+          path: "/employees",
+          icon: Users,
+          permission: ["manage_employee"],
+        },
       ],
     },
     {
-      group: "Projects & Tasks",
+      group: "Operations & Work",
       items: [
-        { name: "Projects", path: "/projects", icon: FolderKanban, badge: "4" },
-        { name: "Task Board", path: "/tasks", icon: CheckSquare, badge: "5" },
-        { name: "Holiday Calendar", path: "/holidays", icon: CalendarDays },
+        {
+          name: "Attendance & Leaves",
+          path: "/attendance",
+          icon: Clock,
+          permission: ["manage_attandance", "manage_attendance"],
+        },
+        {
+          name: "Timesheets",
+          path: "/timesheets",
+          icon: FileSpreadsheet,
+          permission: ["manage_timesheet"],
+        },
+        {
+          name: "Projects",
+          path: "/projects",
+          icon: FolderKanban,
+          badge: "4",
+          permission: ["manage_project"],
+        },
+        {
+          name: "Task Board",
+          path: "/tasks",
+          icon: CheckSquare,
+          badge: "5",
+          permission: ["manage_task"],
+        },
+        {
+          name: "Holiday Calendar",
+          path: "/holidays",
+          icon: CalendarDays,
+          permission: ["manage_holiday"],
+        },
+      ],
+    },
+    {
+      group: "Finance & Payroll",
+      items: [
+        {
+          name: "Payroll Central",
+          path: "/payroll",
+          icon: DollarSign,
+          permission: ["manage_payroll", "payroll"],
+        },
+        {
+          name: "Org Employees",
+          path: "/payroll/org-employees",
+          icon: Building2,
+          permission: ["manage_payroll", "payroll"],
+        },
+        {
+          name: "Students / Interns",
+          path: "/payroll/students",
+          icon: GraduationCap,
+          permission: ["manage_payroll", "payroll"],
+        },
+        {
+          name: "IT Solutions",
+          path: "/payroll/it-solutions",
+          icon: Briefcase,
+          permission: ["manage_payroll", "payroll"],
+        },
       ],
     },
     {
@@ -71,26 +158,57 @@ export default function Sidebar() {
           name: "Learning Hub",
           path: "/learninghub",
           icon: GraduationCap,
+          permission: ["manage_learninghub"],
         },
         {
           name: "Career Postings",
           path: "/careerpost",
           icon: Briefcase,
+          permission: ["manage_career"],
         },
         {
-          name: "Job Applications",
+          name: "Job & Course Applications",
           path: "/applications",
           icon: UserCheck,
+          permission: ["manage_career"],
         },
         {
           name: "Grievances & Policy",
           path: "/accusations",
           icon: ShieldAlert,
+          permission: ["manage_career"],
         },
-        { name: "Company Bulletins", path: "/blogs", icon: Newspaper },
+        {
+          name: "Company Bulletins",
+          path: "/blogs",
+          icon: Newspaper,
+          permission: ["manage_blogs"],
+        },
       ],
     },
-  ];
+    {
+      group: "Administration & System",
+      items: [
+        {
+          name: "System Settings",
+          path: "/settings",
+          icon: Settings,
+          permission: ["manage_settings", "settings", "roles_permissions"],
+        },
+        {
+          name: "Recycle Bin",
+          path: "/recycle-bin",
+          icon: Trash2,
+          permission: ["manage_recycle_bin", "recycle_bin"],
+        },
+      ],
+    },
+  ]
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => hasPermission(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const handleNavClick = () => {
     if (mobileSidebarOpen) {
@@ -130,9 +248,11 @@ export default function Sidebar() {
             onClick={handleNavClick}
             className="flex items-center gap-3 overflow-hidden transition-transform active:scale-95"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20 font-heading font-black text-lg">
-              GT
-            </div>
+            <img
+              src="/icons.png"
+              alt="GoTechEdu"
+              className="h-10 w-10 shrink-0 object-contain rounded-xl shadow-xs"
+            />
             {!sidebarCollapsed && (
               <div className="flex flex-col">
                 <span className="font-heading text-base font-extrabold tracking-tight text-slate-900">
@@ -150,7 +270,7 @@ export default function Sidebar() {
             type="button"
             onClick={() => dispatch(toggleSidebar())}
             aria-label="Toggle sidebar collapse"
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
           >
             {sidebarCollapsed ? (
               <ChevronRight size={14} />
@@ -172,7 +292,10 @@ export default function Sidebar() {
               <div className="space-y-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
+                  const isActive =
+                    item.path === "/"
+                      ? location.pathname === "/"
+                      : location.pathname.startsWith(item.path);
 
                   return (
                     <Link
@@ -248,7 +371,11 @@ export default function Sidebar() {
                 {!sidebarCollapsed && (
                   <button
                     type="button"
-                    onClick={() => dispatch(logoutUser())}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dispatch(logoutUser());
+                    }}
                     title="Logout"
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-rose-600 transition cursor-pointer"
                   >

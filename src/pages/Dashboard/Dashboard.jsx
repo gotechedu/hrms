@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   Users,
   Clock,
@@ -39,9 +39,35 @@ export default function Dashboard() {
 
   const role = (user?.role || 'employee').toLowerCase();
   const isSuperadmin = role === 'superadmin';
+  const permissions = user?.permissions || [];
   const isAdminOrHr = isSuperadmin || ['admin', 'hr'].includes(role);
   const isManagerOrLead = ['manager', 'teamlead'].includes(role);
   const isEmployeeOrIntern = ['employee', 'intern'].includes(role);
+
+  // If user doesn't have manage_dashboard and is not superadmin, route them to their permitted module
+  if (!isSuperadmin && !permissions.includes('manage_dashboard')) {
+    if (permissions.includes('manage_employee')) {
+      return <Navigate to="/employees" replace />;
+    }
+    if (permissions.includes('manage_attandance') || permissions.includes('manage_attendance')) {
+      return <Navigate to="/attendance" replace />;
+    }
+    if (permissions.includes('manage_timesheet')) {
+      return <Navigate to="/timesheets" replace />;
+    }
+    if (permissions.includes('manage_project')) {
+      return <Navigate to="/projects" replace />;
+    }
+    if (permissions.includes('manage_learninghub')) {
+      return <Navigate to="/learninghub" replace />;
+    }
+    if (permissions.includes('manage_career')) {
+      return <Navigate to="/careerpost" replace />;
+    }
+    if (permissions.includes('manage_blogs')) {
+      return <Navigate to="/blogs" replace />;
+    }
+  }
 
   useEffect(() => {
     dispatch(fetchEmployeeStats());

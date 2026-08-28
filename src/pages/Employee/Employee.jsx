@@ -39,8 +39,10 @@ import {
   clearActionMessage,
 } from '../../redux/slices/employeeSlice';
 import Modal from '../../Components/Common/Modal';
+import { rolePermissionApi } from '../../Service';
+import notify from '../../utils/toast';
 
-const ROLES_LIST = [
+const DEFAULT_ROLES_LIST = [
   { value: 'admin', label: 'Admin (System)' },
   { value: 'hr', label: 'HR Admin' },
   { value: 'manager', label: 'Manager' },
@@ -68,6 +70,7 @@ export default function Employee() {
     actionSuccessMessage,
   } = useSelector((state) => state.employee);
 
+  const [availableRoles, setAvailableRoles] = useState(DEFAULT_ROLES_LIST);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState(null);
@@ -76,9 +79,10 @@ export default function Employee() {
 
   // Role permissions
   const userRole = (user?.role || '').toLowerCase();
+  const permissions = user?.permissions || [];
   const isSuperadmin = userRole === 'superadmin';
-  const canManageEmployees = isSuperadmin || ['admin', 'hr'].includes(userRole);
-  const canEditEmployees = isSuperadmin || ['admin', 'hr', 'manager'].includes(userRole);
+  const canManageEmployees = isSuperadmin || permissions.includes('employees') || ['admin', 'hr'].includes(userRole);
+  const canEditEmployees = isSuperadmin || permissions.includes('employees') || ['admin', 'hr', 'manager'].includes(userRole);
 
   // New Employee Form State
   const initialNewEmployee = {
@@ -101,6 +105,23 @@ export default function Employee() {
     dispatch(fetchEmployees());
     dispatch(fetchDepartments());
     dispatch(fetchEmployeeStats());
+
+    // Fetch dynamic roles list from backend
+    rolePermissionApi.getRoles()
+      .then((res) => {
+        const roles = res.data?.roles || res.roles || [];
+        if (roles.length > 0) {
+          setAvailableRoles(
+            roles.map((r) => ({
+              value: r.slug || r.id,
+              label: r.name,
+            }))
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch dynamic roles:', err);
+      });
   }, [dispatch]);
 
   // Refetch when filters change with debounce
@@ -295,7 +316,7 @@ export default function Employee() {
               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 focus:border-blue-600 focus:outline-none"
             >
               <option value="All">All Roles</option>
-              {ROLES_LIST.map((r) => (
+              {availableRoles.map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>
@@ -634,7 +655,7 @@ export default function Employee() {
                     onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-blue-600 focus:outline-none"
                   >
-                    {ROLES_LIST.map((r) => (
+                    {availableRoles.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>
@@ -880,7 +901,7 @@ export default function Employee() {
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-900 focus:border-blue-600 focus:outline-none"
                   >
-                    {ROLES_LIST.map((r) => (
+                    {availableRoles.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>

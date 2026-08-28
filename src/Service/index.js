@@ -10,6 +10,12 @@ export { courseApi } from './courseApi';
 export { jobApi } from './jobApi';
 export { applicationApi } from './applicationApi';
 export { blogApi } from './blogApi';
+export { payrollApi } from './payrollApi';
+export { settingsApi } from './settingsApi';
+export { recycleBinApi } from './recycleBinApi';
+export { rolePermissionApi } from './rolePermissionApi';
+export { attendanceApi } from './attendanceApi';
+export { timesheetApi } from './timesheetApi';
 
 // Aliases for clean backward compatibility
 export { default as api } from './baseApi';
@@ -19,3 +25,9 @@ export { default as courseService } from './courseApi';
 export { default as jobService } from './jobApi';
 export { default as applicationService } from './applicationApi';
 export { default as blogService } from './blogApi';
+export { default as payrollService } from './payrollApi';
+export { default as settingsService } from './settingsApi';
+export { default as recycleBinService } from './recycleBinApi';
+export { default as rolePermissionService } from './rolePermissionApi';
+export { default as attendanceService } from './attendanceApi';
+export { default as timesheetService } from './timesheetApi';

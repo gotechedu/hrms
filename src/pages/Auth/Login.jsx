@@ -84,8 +84,8 @@ export default function Login() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
         {/* Brand Logo */}
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-xl shadow-blue-500/25 font-heading font-black text-2xl tracking-tight">
-          GT
+        <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1">
+          <img src="/icons.png" alt="GoTechEdu Logo" className="h-14 w-14 object-contain rounded-xl" />
         </div>
         <h2 className="mt-4 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           GoTech<span className="text-blue-600">Edu</span> HRMS

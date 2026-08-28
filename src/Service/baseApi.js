@@ -1,8 +1,13 @@
-const rawBaseUrl = (
+let rawBaseUrl = (
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||
-  'https://hrms-backend-4p57.onrender.com/api'
+  'http://localhost:5000/api'
 ).trim().replace(/\/+$/, '');
+
+// Fix https://localhost or https://127.0.0.1 to prevent ERR_SSL_PROTOCOL_ERROR in local dev
+if (rawBaseUrl.startsWith('https://localhost') || rawBaseUrl.startsWith('https://127.0.0.1')) {
+  rawBaseUrl = rawBaseUrl.replace(/^https:\/\//i, 'http://');
+}
 
 export const API_BASE_URL = rawBaseUrl.endsWith('/api')
   ? rawBaseUrl

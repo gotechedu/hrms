@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
   List,
   LayoutGrid,
+  UserCheck,
 } from 'lucide-react';
 import { courseApi } from '../../Service';
 
@@ -32,6 +33,26 @@ export default function LearningHub() {
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+
+  // Candidate Enrollment State
+  const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
+  const initialCandidateForm = {
+    courseTitle: '',
+    studentName: '',
+    email: '',
+    phone: '',
+    collegeOrCompany: '',
+    qualification: 'B.Tech / MCA / BCA',
+    batch: 'Current Cohort 2026',
+    feesStatus: 'Unpaid',
+    feesAmount: 0,
+    experienceLevel: 'Student / Fresher',
+    learningGoal: 'Career Transition / Upskilling',
+    modePreference: 'Live Online Labs',
+    status: 'Pending',
+    notes: '',
+  };
+  const [candidateForm, setCandidateForm] = useState(initialCandidateForm);
 
   const userRole = (user?.role || '').toLowerCase();
   const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
@@ -110,6 +131,19 @@ export default function LearningHub() {
     }
   };
 
+  const handleEnrollCandidate = async (e) => {
+    e.preventDefault();
+    try {
+      await courseApi.submitCourseApplication(candidateForm);
+      setIsCandidateModalOpen(false);
+      setCandidateForm(initialCandidateForm);
+      alert('Student candidate enrolled successfully into course!');
+      fetchCourses();
+    } catch (err) {
+      alert(err.message || 'Error enrolling candidate');
+    }
+  };
+
   const openEditModal = (c) => {
     setEditingCourse(c);
     setForm({
@@ -139,18 +173,39 @@ export default function LearningHub() {
         </div>
 
         {canManage && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditingCourse(null);
-              setForm(initialForm);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95 cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Publish Tech Stack</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCandidateForm(initialCandidateForm);
+                setIsCandidateModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white border border-blue-200 px-4 py-2.5 text-xs font-bold text-blue-700 shadow-2xs hover:bg-blue-50 transition cursor-pointer"
+            >
+              <UserCheck size={16} />
+              <span>Enroll Candidate</span>
+            </button>
+
+            <Link
+              to="/applications"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+            >
+              <span>View Candidates</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCourse(null);
+                setForm(initialForm);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Publish Tech Stack</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -590,6 +645,157 @@ export default function LearningHub() {
                   className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 cursor-pointer"
                 >
                   {editingCourse ? 'Save Changes' : 'Publish to Portal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Enroll Candidate Modal */}
+      {isCandidateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Enroll Student Candidate
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Register student or professional for Learning Hub cohort.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCandidateModalOpen(false)}
+                className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEnrollCandidate} className="mt-5 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ananya Roy"
+                    value={candidateForm.studentName}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, studentName: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="ananya@gmail.com"
+                    value={candidateForm.email}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, email: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={candidateForm.phone}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, phone: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Enrolling For Program *</label>
+                  <select
+                    required
+                    value={candidateForm.courseTitle}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, courseTitle: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="">Select Tech Stack Program</option>
+                    {courses.map((c) => (
+                      <option key={c._id} value={c.title}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Cohort Batch</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Cohort Alpha 2026"
+                    value={candidateForm.batch}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, batch: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">College / Organization</label>
+                  <input
+                    type="text"
+                    placeholder="IIT Delhi / Infosys"
+                    value={candidateForm.collegeOrCompany}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, collegeOrCompany: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Fees Status</label>
+                  <select
+                    value={candidateForm.feesStatus}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, feesStatus: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Paid">Paid</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Scholarship">Scholarship / Free</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Learning Mode</label>
+                  <select
+                    value={candidateForm.modePreference}
+                    onChange={(e) => setCandidateForm({ ...candidateForm, modePreference: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Live Online Labs">Live Online Labs</option>
+                    <option value="Hybrid Campus">Hybrid Campus</option>
+                    <option value="Self-Paced Mentorship">Self-Paced Mentorship</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCandidateModalOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-5 py-2 font-bold text-white shadow-md shadow-blue-600/30 hover:opacity-95 transition"
+                >
+                  Confirm Enrollment
                 </button>
               </div>
             </form>
