@@ -16,6 +16,10 @@ export { recycleBinApi } from './recycleBinApi';
 export { rolePermissionApi } from './rolePermissionApi';
 export { attendanceApi } from './attendanceApi';
 export { timesheetApi } from './timesheetApi';
+export { holidayApi } from './holidayApi';
+export { projectApi } from './projectApi';
+export { taskApi } from './taskApi';
+export { offerApi } from './offerApi';
 
 // Aliases for clean backward compatibility
 export { default as api } from './baseApi';
@@ -31,3 +35,6 @@ export { default as recycleBinService } from './recycleBinApi';
 export { default as rolePermissionService } from './rolePermissionApi';
 export { default as attendanceService } from './attendanceApi';
 export { default as timesheetService } from './timesheetApi';
+export { default as holidayService } from './holidayApi';
+export { default as projectService } from './projectApi';
+export { default as taskService } from './taskApi';

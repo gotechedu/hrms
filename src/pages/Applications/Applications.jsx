@@ -84,6 +84,7 @@ export default function Applications() {
     notes: '',
   };
   const [courseForm, setCourseForm] = useState(initialCourseForm);
+  const [appCourseModalTab, setAppCourseModalTab] = useState(1);
 
   const userRole = (user?.role || '').toLowerCase();
   const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
@@ -295,14 +296,28 @@ export default function Applications() {
       {/* Main Mode Tabs & View Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex gap-3">
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('learning')}
+            className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition cursor-pointer ${activeTab === 'learning'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+          >
+            <GraduationCap size={15} />
+            <span>Learning Hub Course Enrollments</span>
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono font-bold">
+              {courseApplications.length}
+            </span>
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab('jobs')}
-            className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition cursor-pointer ${
-              activeTab === 'jobs'
+            className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition cursor-pointer ${activeTab === 'jobs'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
+              }`}
           >
             <Briefcase size={15} />
             <span>Job Candidate Applications</span>
@@ -311,21 +326,6 @@ export default function Applications() {
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('learning')}
-            className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition cursor-pointer ${
-              activeTab === 'learning'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <GraduationCap size={15} />
-            <span>Learning Hub Course Enrollments</span>
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-mono font-bold">
-              {courseApplications.length}
-            </span>
-          </button>
         </div>
 
         {/* View Switcher */}
@@ -333,11 +333,10 @@ export default function Applications() {
           <button
             type="button"
             onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
-              viewMode === 'table'
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${viewMode === 'table'
                 ? 'bg-white text-blue-600 shadow-2xs'
                 : 'text-slate-500 hover:text-slate-800'
-            }`}
+              }`}
             title="Table View"
           >
             <List size={14} />
@@ -347,11 +346,10 @@ export default function Applications() {
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
-              viewMode === 'grid'
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${viewMode === 'grid'
                 ? 'bg-white text-blue-600 shadow-2xs'
                 : 'text-slate-500 hover:text-slate-800'
-            }`}
+              }`}
             title="Grid View"
           >
             <LayoutGrid size={14} />
@@ -385,11 +383,10 @@ export default function Applications() {
                     key={st}
                     type="button"
                     onClick={() => setSelectedJobStage(st)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                      selectedJobStage === st
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${selectedJobStage === st
                         ? 'bg-blue-600 text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     {st}
                   </button>
@@ -452,13 +449,12 @@ export default function Applications() {
                         </td>
                         <td className="py-3.5 px-4">
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              app.stage === 'Hired'
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${app.stage === 'Hired'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : app.stage === 'Rejected'
-                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}
                           >
                             {app.stage}
                           </span>
@@ -526,13 +522,12 @@ export default function Applications() {
                           {app.jobTitle}
                         </span>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            app.stage === 'Hired'
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${app.stage === 'Hired'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : app.stage === 'Rejected'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
                         >
                           {app.stage}
                         </span>
@@ -619,11 +614,10 @@ export default function Applications() {
                     key={st}
                     type="button"
                     onClick={() => setSelectedCourseStatus(st)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                      selectedCourseStatus === st
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${selectedCourseStatus === st
                         ? 'bg-blue-600 text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     {st}
                   </button>
@@ -684,13 +678,12 @@ export default function Applications() {
                         </td>
                         <td className="py-3.5 px-4">
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              app.status === 'Enrolled' || app.status === 'Approved'
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${app.status === 'Enrolled' || app.status === 'Approved'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : app.status === 'Rejected'
-                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}
                           >
                             {app.status}
                           </span>
@@ -758,13 +751,12 @@ export default function Applications() {
                           {app.courseTitle}
                         </span>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            app.status === 'Enrolled' || app.status === 'Approved'
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${app.status === 'Enrolled' || app.status === 'Approved'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : app.status === 'Rejected'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
                         >
                           {app.status}
                         </span>
@@ -1026,7 +1018,7 @@ export default function Applications() {
         </div>
       )}
 
-      {/* Add Course Candidate Modal */}
+      {/* Add Course Candidate Modal - TAB WIZED */}
       {isAddCourseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 sm:p-8 shadow-2xl my-8">
@@ -1036,7 +1028,7 @@ export default function Applications() {
                   Enroll Course Student Candidate
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Register candidate for Learning Hub programs and industry cohorts.
+                  Multi-tab candidate registration for Learning Hub programs and cohorts.
                 </p>
               </div>
               <button
@@ -1048,141 +1040,200 @@ export default function Applications() {
               </button>
             </div>
 
+            {/* Tab Header Navigation */}
+            <div className="grid grid-cols-4 gap-1.5 bg-slate-100 p-1.5 rounded-2xl mt-4 text-xs font-bold text-slate-600">
+              <button
+                type="button"
+                onClick={() => setAppCourseModalTab(1)}
+                className={`py-2 rounded-xl transition ${appCourseModalTab === 1 ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-900'}`}
+              >
+                1. Basic Info
+              </button>
+              <button
+                type="button"
+                onClick={() => setAppCourseModalTab(2)}
+                className={`py-2 rounded-xl transition ${appCourseModalTab === 2 ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-900'}`}
+              >
+                2. Academic
+              </button>
+              <button
+                type="button"
+                onClick={() => setAppCourseModalTab(3)}
+                className={`py-2 rounded-xl transition ${appCourseModalTab === 3 ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-900'}`}
+              >
+                3. Program & Batch
+              </button>
+              <button
+                type="button"
+                onClick={() => setAppCourseModalTab(4)}
+                className={`py-2 rounded-xl transition ${appCourseModalTab === 4 ? 'bg-white text-blue-600 shadow-2xs' : 'hover:text-slate-900'}`}
+              >
+                4. Fees & Status
+              </button>
+            </div>
+
             <form onSubmit={handleCreateCourseCandidate} className="mt-5 space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Aarav Patel"
-                    value={courseForm.studentName}
-                    onChange={(e) => setCourseForm({ ...courseForm, studentName: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
+              {appCourseModalTab === 1 && (
+                <div className="space-y-3.5 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Aarav Patel"
+                        value={courseForm.studentName}
+                        onChange={(e) => setCourseForm({ ...courseForm, studentName: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="aarav@gmail.com"
-                    value={courseForm.email}
-                    onChange={(e) => setCourseForm({ ...courseForm, email: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
-              </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="aarav@gmail.com"
+                        value={courseForm.email}
+                        onChange={(e) => setCourseForm({ ...courseForm, email: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="+91 98765 43210"
-                    value={courseForm.phone}
-                    onChange={(e) => setCourseForm({ ...courseForm, phone: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="+91 98765 43210"
+                      value={courseForm.phone}
+                      onChange={(e) => setCourseForm({ ...courseForm, phone: e.target.value })}
+                      className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Enrolling For Course *</label>
-                  <input
-                    type="text"
-                    required
-                    list="courses-datalist"
-                    placeholder="e.g. Full-Stack Web Development"
-                    value={courseForm.courseTitle}
-                    onChange={(e) => setCourseForm({ ...courseForm, courseTitle: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
-                  <datalist id="courses-datalist">
-                    {availableCourses.map((c) => (
-                      <option key={c._id} value={c.title} />
-                    ))}
-                  </datalist>
-                </div>
+              {appCourseModalTab === 2 && (
+                <div className="space-y-3.5 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">College / Organization</label>
+                      <input
+                        type="text"
+                        placeholder="IIT Bombay / TCS"
+                        value={courseForm.collegeOrCompany}
+                        onChange={(e) => setCourseForm({ ...courseForm, collegeOrCompany: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Cohort Batch</label>
-                  <input
-                    type="text"
-                    placeholder="Fall 2026 Batch"
-                    value={courseForm.batch}
-                    onChange={(e) => setCourseForm({ ...courseForm, batch: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Qualification</label>
+                      <input
+                        type="text"
+                        placeholder="B.Tech / MCA / BCA"
+                        value={courseForm.qualification}
+                        onChange={(e) => setCourseForm({ ...courseForm, qualification: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Qualification</label>
-                  <input
-                    type="text"
-                    placeholder="B.Tech / MCA / BCA"
-                    value={courseForm.qualification}
-                    onChange={(e) => setCourseForm({ ...courseForm, qualification: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
+              {appCourseModalTab === 3 && (
+                <div className="space-y-3.5 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Enrolling For Course *</label>
+                      <input
+                        type="text"
+                        required
+                        list="courses-datalist-app"
+                        placeholder="e.g. Full-Stack Web Development"
+                        value={courseForm.courseTitle}
+                        onChange={(e) => setCourseForm({ ...courseForm, courseTitle: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                      <datalist id="courses-datalist-app">
+                        {availableCourses.map((c) => (
+                          <option key={c._id} value={c.title} />
+                        ))}
+                      </datalist>
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Fees Status</label>
-                  <select
-                    value={courseForm.feesStatus}
-                    onChange={(e) => setCourseForm({ ...courseForm, feesStatus: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  >
-                    <option value="Paid">Paid</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Unpaid">Unpaid</option>
-                    <option value="Scholarship">Scholarship / Free</option>
-                  </select>
-                </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Cohort Batch</label>
+                      <input
+                        type="text"
+                        placeholder="Fall 2026 Batch"
+                        value={courseForm.batch}
+                        onChange={(e) => setCourseForm({ ...courseForm, batch: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Fees Amount (₹)</label>
-                  <input
-                    type="number"
-                    value={courseForm.feesAmount}
-                    onChange={(e) => setCourseForm({ ...courseForm, feesAmount: Number(e.target.value) })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 font-mono"
-                  />
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Learning Mode</label>
+                    <select
+                      value={courseForm.modePreference}
+                      onChange={(e) => setCourseForm({ ...courseForm, modePreference: e.target.value })}
+                      className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                    >
+                      <option value="Live Online Labs">Live Online Labs</option>
+                      <option value="Hybrid Campus">Hybrid Campus</option>
+                      <option value="Self-Paced Mentorship">Self-Paced Mentorship</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Learning Mode</label>
-                  <select
-                    value={courseForm.modePreference}
-                    onChange={(e) => setCourseForm({ ...courseForm, modePreference: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  >
-                    <option value="Live Online Labs">Live Online Labs</option>
-                    <option value="Hybrid Campus">Hybrid Campus</option>
-                    <option value="Self-Paced Mentorship">Self-Paced Mentorship</option>
-                  </select>
-                </div>
+              {appCourseModalTab === 4 && (
+                <div className="space-y-3.5 animate-fadeIn">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Fees Status</label>
+                      <select
+                        value={courseForm.feesStatus}
+                        onChange={(e) => setCourseForm({ ...courseForm, feesStatus: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      >
+                        <option value="Paid">Paid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Scholarship">Scholarship / Free</option>
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Enrollment Status</label>
-                  <select
-                    value={courseForm.status}
-                    onChange={(e) => setCourseForm({ ...courseForm, status: e.target.value })}
-                    className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Screening">Screening</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Enrolled">Enrolled</option>
-                  </select>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Fees Amount (₹)</label>
+                      <input
+                        type="number"
+                        value={courseForm.feesAmount}
+                        onChange={(e) => setCourseForm({ ...courseForm, feesAmount: Number(e.target.value) })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Enrollment Status</label>
+                      <select
+                        value={courseForm.status}
+                        onChange={(e) => setCourseForm({ ...courseForm, status: e.target.value })}
+                        className="h-9 w-full rounded-xl border border-slate-200 px-3 focus:border-blue-600 focus:outline-none"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Screening">Screening</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Enrolled">Enrolled</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
