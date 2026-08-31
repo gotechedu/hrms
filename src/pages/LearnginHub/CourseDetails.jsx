@@ -295,12 +295,17 @@ export default function CourseDetails() {
                   <th className="py-3 px-4">Phone</th>
                   <th className="py-3 px-4">College / Background</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {enrolledStudents.map((app) => (
                   <tr key={app._id} className="hover:bg-slate-50 transition">
-                    <td className="py-3 px-4 font-bold text-slate-900">{app.studentName}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900">
+                      <Link to={`/applications/${app._id}`} className="hover:text-blue-600 hover:underline">
+                        {app.studentName}
+                      </Link>
+                    </td>
                     <td className="py-3 px-4 text-blue-600">{app.email}</td>
                     <td className="py-3 px-4 text-slate-600">{app.phone}</td>
                     <td className="py-3 px-4 text-slate-500">{app.collegeOrCompany || 'Fresher'}</td>
@@ -308,6 +313,14 @@ export default function CourseDetails() {
                       <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                         {app.status}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Link
+                        to={`/applications/${app._id}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700"
+                      >
+                        View Details →
+                      </Link>
                     </td>
                   </tr>
                 ))}

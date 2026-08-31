@@ -38,6 +38,10 @@ export const courseApi = {
     return baseApi.get(`/course-applications${qs ? `?${qs}` : ''}`);
   },
 
+  getCourseApplicationById: async (id) => {
+    return baseApi.get(`/course-applications/${id}`);
+  },
+
   submitCourseApplication: async (applicationData) => {
     return baseApi.post('/course-applications', applicationData);
   },

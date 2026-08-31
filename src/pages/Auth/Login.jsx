@@ -88,7 +88,7 @@ export default function Login() {
           <img src="/icons.png" alt="GoTechEdu Logo" className="h-14 w-14 object-contain rounded-xl" />
         </div>
         <h2 className="mt-4 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          GoTech<span className="text-blue-600">Edu</span> HRMS
+          GoTech<span className="text-blue-600">Edu</span>
         </h2>
         <p className="mt-1 text-xs sm:text-sm text-slate-500">
           Enterprise Human Resource & Workforce Intelligence Platform
@@ -102,10 +102,6 @@ export default function Login() {
             <h3 className="font-heading text-lg font-bold text-slate-900">
               Sign In to Workstation
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Enter your corporate credentials. Roles and permissions are
-              automatically authenticated.
-            </p>
           </div>
 
           {/* Error Alert Box */}

@@ -256,9 +256,7 @@ export default function Sidebar() {
                 <span className="font-heading text-base font-extrabold tracking-tight text-slate-900">
                   GoTech<span className="text-blue-600">Edu</span>
                 </span>
-                <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold">
-                  Enterprise HRMS
-                </span>
+
               </div>
             )}
           </Link>

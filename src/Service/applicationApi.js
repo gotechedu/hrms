@@ -13,6 +13,10 @@ export const applicationApi = {
     return baseApi.get(`/job-applications${qs ? `?${qs}` : ''}`);
   },
 
+  getJobApplicationById: async (id) => {
+    return baseApi.get(`/job-applications/${id}`);
+  },
+
   submitJobApplication: async (applicationData) => {
     return baseApi.post('/job-applications', applicationData);
   },
