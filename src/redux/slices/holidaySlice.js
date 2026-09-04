@@ -25,6 +25,18 @@ export const addHolidayAsync = createAsyncThunk(
   }
 );
 
+export const updateHolidayAsync = createAsyncThunk(
+  'holidays/updateHolidayAsync',
+  async ({ id, holidayData }, { rejectWithValue }) => {
+    try {
+      const response = await holidayApi.updateHoliday(id, holidayData);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to update holiday');
+    }
+  }
+);
+
 export const deleteHolidayAsync = createAsyncThunk(
   'holidays/deleteHolidayAsync',
   async (id, { rejectWithValue }) => {
@@ -37,27 +49,12 @@ export const deleteHolidayAsync = createAsyncThunk(
   }
 );
 
-const initialHolidays = [
-  { _id: 'h1', id: 'h1', name: 'New Year Day', date: '2025-01-01', day: 'Wednesday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h2', id: 'h2', name: 'Republic Day', date: '2025-01-26', day: 'Sunday', type: 'National Holiday', isOptional: false },
-  { _id: 'h3', id: 'h3', name: 'Maha Shivratri', date: '2025-02-26', day: 'Wednesday', type: 'Restricted Holiday', isOptional: true },
-  { _id: 'h4', id: 'h4', name: 'Holi (Festival of Colors)', date: '2025-03-14', day: 'Friday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h5', id: 'h5', name: 'Eid-ul-Fitr', date: '2025-03-31', day: 'Monday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h6', id: 'h6', name: 'Good Friday', date: '2025-04-18', day: 'Friday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h7', id: 'h7', name: 'Independence Day', date: '2025-08-15', day: 'Friday', type: 'National Holiday', isOptional: false },
-  { _id: 'h8', id: 'h8', name: 'Gandhi Jayanti', date: '2025-10-02', day: 'Thursday', type: 'National Holiday', isOptional: false },
-  { _id: 'h9', id: 'h9', name: 'Dussehra (Vijayadashami)', date: '2025-10-02', day: 'Thursday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h10', id: 'h10', name: 'Diwali (Deepavali)', date: '2025-10-20', day: 'Monday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h11', id: 'h11', name: 'Guru Nanak Jayanti', date: '2025-11-05', day: 'Wednesday', type: 'Public Holiday', isOptional: false },
-  { _id: 'h12', id: 'h12', name: 'Christmas Day', date: '2025-12-25', day: 'Thursday', type: 'Public Holiday', isOptional: false },
-];
-
 const holidaySlice = createSlice({
   name: 'holidays',
   initialState: {
-    holidays: initialHolidays,
+    holidays: [],
     selectedYear: '2025',
-    loading: false,
+    loading: true,
     error: null,
   },
   reducers: {
@@ -87,12 +84,10 @@ const holidaySlice = createSlice({
       })
       .addCase(fetchHolidays.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload && action.payload.length > 0) {
-          state.holidays = action.payload.map((h) => ({
-            ...h,
-            id: h._id || h.id,
-          }));
-        }
+        state.holidays = (action.payload || []).map((h) => ({
+          ...h,
+          id: h._id || h.id,
+        }));
       })
       .addCase(fetchHolidays.rejected, (state, action) => {
         state.loading = false;
@@ -101,6 +96,16 @@ const holidaySlice = createSlice({
       .addCase(addHolidayAsync.fulfilled, (state, action) => {
         const item = { ...action.payload, id: action.payload._id || action.payload.id };
         state.holidays.push(item);
+        state.holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+      })
+      .addCase(updateHolidayAsync.fulfilled, (state, action) => {
+        const updated = { ...action.payload, id: action.payload._id || action.payload.id };
+        const idx = state.holidays.findIndex((h) => h._id === updated._id || h.id === updated.id);
+        if (idx !== -1) {
+          state.holidays[idx] = updated;
+        } else {
+          state.holidays.push(updated);
+        }
         state.holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
       })
       .addCase(deleteHolidayAsync.fulfilled, (state, action) => {

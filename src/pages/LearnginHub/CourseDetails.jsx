@@ -18,6 +18,7 @@ import {
   ChevronRight,
   X,
   AlertCircle,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { courseApi } from '../../Service';
 
@@ -45,8 +46,21 @@ export default function CourseDetails() {
         setCourse(res.course);
         setEditForm({
           ...res.course,
-          techStack: Array.isArray(res.course.techStack) ? res.course.techStack.join(', ') : res.course.techStack,
-          modules: Array.isArray(res.course.modules) ? res.course.modules.join('\n') : res.course.modules,
+          techStack: Array.isArray(res.course.techStack) ? res.course.techStack.join(', ') : (res.course.techStack || ''),
+          modules: Array.isArray(res.course.modules) ? res.course.modules.join('\n') : (res.course.modules || ''),
+          whatYouWillLearn: Array.isArray(res.course.whatYouWillLearn) ? res.course.whatYouWillLearn.join('\n') : (res.course.whatYouWillLearn || ''),
+          prerequisites: Array.isArray(res.course.prerequisites) ? res.course.prerequisites.join('\n') : (res.course.prerequisites || ''),
+          image: res.course.image || res.course.previewImage || res.course.thumbnail || res.course.bannerImage || '',
+          heroTagline: res.course.heroTagline || '',
+          totalHours: res.course.totalHours || '',
+          lecturesCount: res.course.lecturesCount || '',
+          nextBatchDate: res.course.nextBatchDate || '',
+          originalPrice: res.course.originalPrice || '',
+          discountedPrice: res.course.discountedPrice || '',
+          emiStartsAt: res.course.emiStartsAt || '',
+          averageSalaryHike: res.course.averageSalaryHike || '',
+          rating: res.course.rating || 4.9,
+          reviewsCount: res.course.reviewsCount || 0,
         });
 
         // Also fetch enrolled student applications for this course
@@ -76,7 +90,14 @@ export default function CourseDetails() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await courseApi.updateCourse(course._id, editForm);
+      const payload = {
+        ...editForm,
+        originalPrice: editForm.originalPrice ? Number(editForm.originalPrice) : undefined,
+        discountedPrice: editForm.discountedPrice ? Number(editForm.discountedPrice) : undefined,
+        rating: editForm.rating ? Number(editForm.rating) : undefined,
+        reviewsCount: editForm.reviewsCount ? Number(editForm.reviewsCount) : undefined,
+      };
+      await courseApi.updateCourse(course._id, payload);
       setIsEditModalOpen(false);
       fetchCourseData();
     } catch (err) {
@@ -168,53 +189,105 @@ export default function CourseDetails() {
       </div>
 
       {/* Hero Banner Card */}
-      <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-bold uppercase text-blue-700 border border-blue-100">
-                {course.category}
+      <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xs">
+        <div className="grid md:grid-cols-3 gap-6 p-6 sm:p-8">
+          {/* Visual Column */}
+          <div className="relative h-52 md:h-full min-h-[190px] w-full overflow-hidden rounded-2xl bg-slate-100 flex items-center justify-center">
+            {course.image || course.previewImage || course.thumbnail || course.bannerImage ? (
+              <img
+                src={course.image || course.previewImage || course.thumbnail || course.bannerImage}
+                alt={course.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-extrabold">
+                💻
+              </div>
+            )}
+            {course.badge && (
+              <span className="absolute top-3 left-3 rounded-full bg-slate-900/80 backdrop-blur-xs px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
+                {course.badge}
               </span>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                {course.badge || 'Popular'}
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                  course.status === 'Active'
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                Status: {course.status}
-              </span>
-            </div>
-
-            <h1 className="mt-3 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {course.title}
-            </h1>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
-              {course.description}
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(course.techStack || []).map((tech, idx) => (
-                <span
-                  key={idx}
-                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-mono font-semibold text-slate-700 border border-slate-200"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
+            )}
           </div>
 
-          <div className="flex md:flex-col items-center md:items-end justify-between gap-3 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100 shrink-0">
-            <span className="text-xl font-heading font-black text-emerald-600 font-mono">
-              {course.price || 'Free Sponsored'}
-            </span>
-            <span className="text-xs font-mono font-bold text-slate-500">
-              Enrolled Students: <strong className="text-slate-900">{enrolledStudents.length}</strong>
-            </span>
+          {/* Details Column */}
+          <div className="md:col-span-2 flex flex-col justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-bold uppercase text-blue-700 border border-blue-100">
+                  {course.category}
+                </span>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    course.status === 'Active'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  Status: {course.status}
+                </span>
+                {course.rating && (
+                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700 border border-amber-200 flex items-center gap-1">
+                    ★ {course.rating} ({course.reviewsCount || 120}+ reviews)
+                  </span>
+                )}
+              </div>
+
+              <h1 className="mt-3 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900">
+                {course.title}
+              </h1>
+              {course.heroTagline && (
+                <p className="mt-1 text-sm font-semibold text-blue-600">
+                  {course.heroTagline}
+                </p>
+              )}
+              <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
+                {course.description}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {(course.techStack || []).map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs font-mono font-semibold text-slate-700 border border-slate-200"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Pricing / Enrollment strip */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-baseline gap-2">
+                {course.discountedPrice ? (
+                  <>
+                    <span className="text-2xl font-heading font-black text-slate-900 font-mono">
+                      ₹{Number(course.discountedPrice).toLocaleString('en-IN')}
+                    </span>
+                    {course.originalPrice && course.originalPrice > course.discountedPrice && (
+                      <span className="text-sm text-slate-400 line-through font-mono">
+                        ₹{Number(course.originalPrice).toLocaleString('en-IN')}
+                      </span>
+                    )}
+                    {course.emiStartsAt && (
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        EMI: {course.emiStartsAt}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-xl font-heading font-black text-emerald-600 font-mono">
+                    {course.price || 'Free Sponsored'}
+                  </span>
+                )}
+              </div>
+
+              <div className="text-xs font-mono font-bold text-slate-500">
+                Enrolled Students: <strong className="text-slate-900">{enrolledStudents.length}</strong>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -241,6 +314,30 @@ export default function CourseDetails() {
               <span className="text-slate-500 font-mono">Experience Level</span>
               <span className="font-bold text-blue-600">{course.level}</span>
             </div>
+            {course.totalHours && (
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-mono">Total Hours</span>
+                <span className="font-bold text-slate-900">{course.totalHours}</span>
+              </div>
+            )}
+            {course.lecturesCount && (
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-mono">Lectures</span>
+                <span className="font-bold text-slate-900">{course.lecturesCount}</span>
+              </div>
+            )}
+            {course.nextBatchDate && (
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-mono">Next Batch Starts</span>
+                <span className="font-bold text-blue-600">{course.nextBatchDate}</span>
+              </div>
+            )}
+            {course.averageSalaryHike && (
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-mono">Average Salary Hike</span>
+                <span className="font-bold text-emerald-600">{course.averageSalaryHike}</span>
+              </div>
+            )}
             <div className="flex justify-between py-1.5">
               <span className="text-slate-500 font-mono">Target Career Outcome</span>
               <span className="font-bold text-emerald-600">{course.careerOutcome}</span>
@@ -267,6 +364,42 @@ export default function CourseDetails() {
             ))}
           </ul>
         </div>
+
+        {/* Card 3: What You Will Learn */}
+        {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xs">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+              <CheckCircle2 size={18} className="text-emerald-600" />
+              <h3 className="font-heading text-base font-bold text-slate-900">Key Learning Outcomes</h3>
+            </div>
+            <ul className="space-y-2 text-xs">
+              {course.whatYouWillLearn.map((item, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-slate-700">
+                  <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Card 4: Prerequisites */}
+        {course.prerequisites && course.prerequisites.length > 0 && (
+          <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xs">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+              <Sparkles size={18} className="text-amber-600" />
+              <h3 className="font-heading text-base font-bold text-slate-900">Program Prerequisites</h3>
+            </div>
+            <ul className="space-y-2 text-xs">
+              {course.prerequisites.map((req, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-slate-700">
+                  <span className="text-amber-500 font-bold shrink-0">•</span>
+                  <span>{req}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Enrolled Student Applications Table */}
@@ -359,6 +492,49 @@ export default function CourseDetails() {
                 />
               </div>
 
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Hero Tagline
+                </label>
+                <input
+                  type="text"
+                  value={editForm.heroTagline || ''}
+                  onChange={(e) => setEditForm({ ...editForm, heroTagline: e.target.value })}
+                  placeholder="e.g. Master modern web development with production deployments"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              {/* Image URL & Live Preview */}
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Course Cover Image URL
+                </label>
+                <div className="flex gap-3 items-start">
+                  <div className="flex-1">
+                    <input
+                      type="url"
+                      value={editForm.image || ''}
+                      onChange={(e) => setEditForm({ ...editForm, image: e.target.value })}
+                      placeholder="https://images.unsplash.com/... or custom URL"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:border-blue-600 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div className="h-12 w-20 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                    {editForm.image ? (
+                      <img
+                        src={editForm.image}
+                        alt="Preview"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <ImageIcon size={18} className="text-slate-300" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
@@ -385,6 +561,124 @@ export default function CourseDetails() {
                     value={editForm.duration || ''}
                     onChange={(e) => setEditForm({ ...editForm, duration: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Level
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.level || ''}
+                    onChange={(e) => setEditForm({ ...editForm, level: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Hours, Lectures, Next Batch */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Total Hours
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.totalHours || ''}
+                    onChange={(e) => setEditForm({ ...editForm, totalHours: e.target.value })}
+                    placeholder="80+ Hours"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Lectures Count
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.lecturesCount || ''}
+                    onChange={(e) => setEditForm({ ...editForm, lecturesCount: e.target.value })}
+                    placeholder="64 Lectures"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Next Batch Date
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.nextBatchDate || ''}
+                    onChange={(e) => setEditForm({ ...editForm, nextBatchDate: e.target.value })}
+                    placeholder="e.g. 15th Oct, 2026"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Pricing, EMI, Salary Hike */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Discounted Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.discountedPrice || ''}
+                    onChange={(e) => setEditForm({ ...editForm, discountedPrice: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Original MRP Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.originalPrice || ''}
+                    onChange={(e) => setEditForm({ ...editForm, originalPrice: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    EMI Option
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.emiStartsAt || ''}
+                    onChange={(e) => setEditForm({ ...editForm, emiStartsAt: e.target.value })}
+                    placeholder="₹2,500/mo"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Badge Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.badge || ''}
+                    onChange={(e) => setEditForm({ ...editForm, badge: e.target.value })}
+                    placeholder="Popular / Bestseller"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                    Rating (1-5)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={editForm.rating || ''}
+                    onChange={(e) => setEditForm({ ...editForm, rating: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -436,6 +730,30 @@ export default function CourseDetails() {
                   rows={3}
                   value={editForm.modules || ''}
                   onChange={(e) => setEditForm({ ...editForm, modules: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  What Students Will Learn (one per line)
+                </label>
+                <textarea
+                  rows={3}
+                  value={editForm.whatYouWillLearn || ''}
+                  onChange={(e) => setEditForm({ ...editForm, whatYouWillLearn: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                  Prerequisites (one per line)
+                </label>
+                <textarea
+                  rows={2}
+                  value={editForm.prerequisites || ''}
+                  onChange={(e) => setEditForm({ ...editForm, prerequisites: e.target.value })}
                   className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
                 />
               </div>

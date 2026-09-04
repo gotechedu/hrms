@@ -20,6 +20,8 @@ export { holidayApi } from './holidayApi';
 export { projectApi } from './projectApi';
 export { taskApi } from './taskApi';
 export { offerApi } from './offerApi';
+export { contactApi } from './contactApi';
+export { discussionApi } from './discussionApi';
 
 // Aliases for clean backward compatibility
 export { default as api } from './baseApi';
@@ -38,3 +40,5 @@ export { default as timesheetService } from './timesheetApi';
 export { default as holidayService } from './holidayApi';
 export { default as projectService } from './projectApi';
 export { default as taskService } from './taskApi';
+export { default as contactService } from './contactApi';
+export { default as discussionService } from './discussionApi';

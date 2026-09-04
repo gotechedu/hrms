@@ -29,6 +29,8 @@ import Accusations from './pages/Accusations/Accusations';
 import Blogs from './pages/Blogs/Blogs';
 import Profile from './pages/Profile/Profile';
 import Chat from './pages/Chat/Chat';
+import Contacts from './pages/Contacts/Contacts';
+import Discussions from './pages/Discussions/Discussions';
 
 // Payroll Module Pages
 import PayRol from './pages/PayRol/PayRol';
@@ -138,7 +140,11 @@ export default function App() {
           <Route path="applications" element={<Applications />} />
           <Route path="applications/:id" element={<ApplicationDetails />} />
 
+          {/* Client Consultations & Leads */}
+          <Route path="contacts" element={<Contacts />} />
+
           {/* Communication & Policy */}
+          <Route path="discussions" element={<Discussions />} />
           <Route path="accusations" element={<Accusations />} />
           <Route path="blogs" element={<Blogs />} />
           <Route path="profile" element={<Profile />} />

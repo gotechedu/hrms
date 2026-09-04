@@ -23,6 +23,7 @@ import {
   Eye,
   EyeOff,
   UserCheck,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { courseApi, offerApi } from '../../Service';
 
@@ -93,6 +94,24 @@ export default function LearningHub() {
     careerOutcome: 'Full-Stack Software Engineer (₹8L – ₹18L PA)',
     price: 'Free & Industry Sponsored',
     status: 'Active',
+    // Comprehensive Visuals & Curriculum Details
+    image: '',
+    bannerImage: '',
+    heroTagline: '',
+    totalHours: '80+ Hours',
+    lecturesCount: '60+ Lectures',
+    nextBatchDate: '',
+    originalPrice: 49999,
+    discountedPrice: 24999,
+    emiStartsAt: '₹2,500/mo',
+    averageSalaryHike: '65%',
+    rating: 4.9,
+    reviewsCount: 120,
+    whatYouWillLearn: '',
+    prerequisites: '',
+    instructorName: '',
+    instructorRole: '',
+    instructorBio: '',
   };
   const [form, setForm] = useState(initialForm);
 
@@ -174,10 +193,22 @@ export default function LearningHub() {
   const handleSaveCourse = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+        discountedPrice: form.discountedPrice ? Number(form.discountedPrice) : undefined,
+        rating: form.rating ? Number(form.rating) : undefined,
+        reviewsCount: form.reviewsCount ? Number(form.reviewsCount) : undefined,
+        instructors: form.instructorName ? [{
+          name: form.instructorName,
+          role: form.instructorRole || 'Lead Instructor',
+          bio: form.instructorBio || '',
+        }] : undefined,
+      };
       if (editingCourse) {
-        await courseApi.updateCourse(editingCourse._id, form);
+        await courseApi.updateCourse(editingCourse._id, payload);
       } else {
-        await courseApi.createCourse(form);
+        await courseApi.createCourse(payload);
       }
       setIsModalOpen(false);
       setEditingCourse(null);
@@ -216,8 +247,25 @@ export default function LearningHub() {
     setEditingCourse(c);
     setForm({
       ...c,
-      techStack: Array.isArray(c.techStack) ? c.techStack.join(', ') : c.techStack,
-      modules: Array.isArray(c.modules) ? c.modules.join('\n') : c.modules,
+      techStack: Array.isArray(c.techStack) ? c.techStack.join(', ') : (c.techStack || ''),
+      modules: Array.isArray(c.modules) ? c.modules.join('\n') : (c.modules || ''),
+      whatYouWillLearn: Array.isArray(c.whatYouWillLearn) ? c.whatYouWillLearn.join('\n') : (c.whatYouWillLearn || ''),
+      prerequisites: Array.isArray(c.prerequisites) ? c.prerequisites.join('\n') : (c.prerequisites || ''),
+      image: c.image || c.previewImage || c.thumbnail || c.bannerImage || '',
+      bannerImage: c.bannerImage || c.image || '',
+      heroTagline: c.heroTagline || '',
+      totalHours: c.totalHours || '',
+      lecturesCount: c.lecturesCount || '',
+      nextBatchDate: c.nextBatchDate || '',
+      originalPrice: c.originalPrice || '',
+      discountedPrice: c.discountedPrice || '',
+      emiStartsAt: c.emiStartsAt || '',
+      averageSalaryHike: c.averageSalaryHike || '',
+      rating: c.rating || 4.9,
+      reviewsCount: c.reviewsCount || 0,
+      instructorName: c.instructors?.[0]?.name || '',
+      instructorRole: c.instructors?.[0]?.role || '',
+      instructorBio: c.instructors?.[0]?.bio || '',
     });
     setIsModalOpen(true);
   };
@@ -412,22 +460,35 @@ export default function LearningHub() {
                 {courses.map((course) => (
                   <tr key={course._id} className="hover:bg-slate-50/80 transition group">
                     <td className="py-3.5 px-5">
-                      <div className="min-w-0 max-w-xs sm:max-w-sm">
-                        <Link
-                          to={`/learninghub/${course._id}`}
-                          className="font-bold text-slate-900 group-hover:text-blue-600 transition block truncate text-xs sm:text-sm"
-                        >
-                          {course.title}
-                        </Link>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {(course.techStack || []).slice(0, 3).map((t, idx) => (
-                            <span
-                              key={idx}
-                              className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-slate-600"
-                            >
-                              {t}
-                            </span>
-                          ))}
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
+                          {course.image || course.previewImage || course.thumbnail || course.bannerImage ? (
+                            <img
+                              src={course.image || course.previewImage || course.thumbnail || course.bannerImage}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm">💻</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 max-w-xs sm:max-w-sm">
+                          <Link
+                            to={`/learninghub/${course._id}`}
+                            className="font-bold text-slate-900 group-hover:text-blue-600 transition block truncate text-xs sm:text-sm"
+                          >
+                            {course.title}
+                          </Link>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {(course.techStack || []).slice(0, 3).map((t, idx) => (
+                              <span
+                                key={idx}
+                                className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-slate-600"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -503,13 +564,34 @@ export default function LearningHub() {
               className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xs transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg"
             >
               <div>
+                <div className="relative mb-3.5 h-36 w-full overflow-hidden rounded-2xl bg-slate-100 flex items-center justify-center">
+                  {course.image || course.previewImage || course.thumbnail || course.bannerImage ? (
+                    <img
+                      src={course.image || course.previewImage || course.thumbnail || course.bannerImage}
+                      alt={course.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-3xl font-extrabold">
+                      💻
+                    </div>
+                  )}
+                  {course.badge && (
+                    <span className="absolute top-2.5 right-2.5 rounded-full bg-slate-900/80 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                      {course.badge}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <span className="rounded-md bg-blue-50 px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase text-blue-700 border border-blue-100">
                     {course.category}
                   </span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                    {course.badge || 'Popular'}
-                  </span>
+                  {course.rating && (
+                    <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                      ★ {course.rating}
+                    </span>
+                  )}
                 </div>
 
                 <h3 className="mt-4 font-heading text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">
@@ -649,6 +731,76 @@ export default function LearningHub() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                      Hero Tagline
+                    </label>
+                    <input
+                      type="text"
+                      value={form.heroTagline}
+                      onChange={(e) => setForm({ ...form, heroTagline: e.target.value })}
+                      placeholder="e.g. Build enterprise-grade fullstack web applications from scratch"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Image URL & Live Preview */}
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1 flex items-center justify-between">
+                      <span>Course Cover Image URL</span>
+                      <span className="text-[10px] text-slate-400 font-normal lowercase">webp / jpg / png link</span>
+                    </label>
+                    <div className="flex gap-3 items-start">
+                      <div className="flex-1">
+                        <input
+                          type="url"
+                          value={form.image}
+                          onChange={(e) => setForm({ ...form, image: e.target.value })}
+                          placeholder="https://images.unsplash.com/photo-... or custom image URL"
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:border-blue-600 focus:outline-none font-mono"
+                        />
+                        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px]">
+                          <span className="text-slate-400 font-medium">Quick presets:</span>
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80' })}
+                            className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            Coding / Web
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80' })}
+                            className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            Cloud & DevOps
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80' })}
+                            className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            AI & Data
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Image Preview Box */}
+                      <div className="h-16 w-24 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                        {form.image ? (
+                          <img
+                            src={form.image}
+                            alt="Preview"
+                            className="h-full w-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <ImageIcon size={20} className="text-slate-300" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
@@ -694,6 +846,48 @@ export default function LearningHub() {
                     </div>
                   </div>
 
+                  {/* Hours, Lectures, Next Batch */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Total Hours
+                      </label>
+                      <input
+                        type="text"
+                        value={form.totalHours}
+                        onChange={(e) => setForm({ ...form, totalHours: e.target.value })}
+                        placeholder="80+ Hours"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Lectures Count
+                      </label>
+                      <input
+                        type="text"
+                        value={form.lecturesCount}
+                        onChange={(e) => setForm({ ...form, lecturesCount: e.target.value })}
+                        placeholder="64 Lectures"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Next Batch Date
+                      </label>
+                      <input
+                        type="text"
+                        value={form.nextBatchDate}
+                        onChange={(e) => setForm({ ...form, nextBatchDate: e.target.value })}
+                        placeholder="e.g. 15th Oct, 2026"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
                       Tech Stack (comma separated)
@@ -714,7 +908,63 @@ export default function LearningHub() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                        Pricing / Sponsorship Badge
+                        Discounted / Live Fee (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={form.discountedPrice}
+                        onChange={(e) => setForm({ ...form, discountedPrice: e.target.value })}
+                        placeholder="24999"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Original / MRP Fee (₹)
+                      </label>
+                      <input
+                        type="number"
+                        value={form.originalPrice}
+                        onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
+                        placeholder="49999"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        EMI Option
+                      </label>
+                      <input
+                        type="text"
+                        value={form.emiStartsAt}
+                        onChange={(e) => setForm({ ...form, emiStartsAt: e.target.value })}
+                        placeholder="e.g. ₹2,500/month"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Average Salary Hike
+                      </label>
+                      <input
+                        type="text"
+                        value={form.averageSalaryHike}
+                        onChange={(e) => setForm({ ...form, averageSalaryHike: e.target.value })}
+                        placeholder="e.g. 65% Avg Hike"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Pricing / Sponsorship Badge Text
                       </label>
                       <input
                         type="text"
@@ -773,11 +1023,37 @@ export default function LearningHub() {
                       Syllabus Modules (One per line)
                     </label>
                     <textarea
-                      rows={4}
+                      rows={3}
                       value={form.modules}
                       onChange={(e) => setForm({ ...form, modules: e.target.value })}
-                      placeholder="Module 1: Foundations&#10;Module 2: Advanced Architecture&#10;Module 3: Capstone Deployment"
+                      placeholder="Module 1: Foundations & Core Concepts&#10;Module 2: Advanced Architecture & State&#10;Module 3: Capstone Deployment"
                       className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                      What You Will Learn / Key Outcomes (One per line)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={form.whatYouWillLearn}
+                      onChange={(e) => setForm({ ...form, whatYouWillLearn: e.target.value })}
+                      placeholder="Build production-grade applications&#10;Implement end-to-end authentication & authorization&#10;Architect scalable database models with automated tests"
+                      className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                      Prerequisites (One per line)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={form.prerequisites}
+                      onChange={(e) => setForm({ ...form, prerequisites: e.target.value })}
+                      placeholder="Basic understanding of programming logic&#10;Familiarity with HTML/CSS and JavaScript basics"
+                      className="w-full rounded-xl border border-slate-200 p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -788,6 +1064,47 @@ export default function LearningHub() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Lead Instructor Name
+                      </label>
+                      <input
+                        type="text"
+                        value={form.instructorName}
+                        onChange={(e) => setForm({ ...form, instructorName: e.target.value })}
+                        placeholder="e.g. Dr. Aryan Sharma"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Instructor Designation / Role
+                      </label>
+                      <input
+                        type="text"
+                        value={form.instructorRole}
+                        onChange={(e) => setForm({ ...form, instructorRole: e.target.value })}
+                        placeholder="e.g. Principal Cloud Architect"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                      Instructor Bio
+                    </label>
+                    <input
+                      type="text"
+                      value={form.instructorBio}
+                      onChange={(e) => setForm({ ...form, instructorBio: e.target.value })}
+                      placeholder="10+ years mentoring engineering teams at global enterprises"
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
                         Course Badge Tag
                       </label>
                       <input
@@ -796,6 +1113,22 @@ export default function LearningHub() {
                         onChange={(e) => setForm({ ...form, badge: e.target.value })}
                         placeholder="Popular / Bestseller"
                         className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
+                        Star Rating (1 - 5)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="1"
+                        max="5"
+                        value={form.rating}
+                        onChange={(e) => setForm({ ...form, rating: e.target.value })}
+                        placeholder="4.9"
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 font-mono focus:border-blue-600 focus:outline-none"
                       />
                     </div>
 

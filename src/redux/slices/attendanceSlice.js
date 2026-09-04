@@ -1,35 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialLogs = [
-  { id: 1, date: '2025-05-19', checkIn: '09:02 AM', checkOut: '06:14 PM', workingHours: '9h 12m', status: 'Present', mode: 'Office Biometric' },
-  { id: 2, date: '2025-05-18', checkIn: '09:15 AM', checkOut: '06:30 PM', workingHours: '9h 15m', status: 'Present', mode: 'Office Biometric' },
-  { id: 3, date: '2025-05-17', checkIn: '08:55 AM', checkOut: '05:58 PM', workingHours: '9h 03m', status: 'Present', mode: 'Remote Geo-Punch' },
-  { id: 4, date: '2025-05-16', checkIn: '—', checkOut: '—', workingHours: '0h 00m', status: 'Paid Leave', mode: 'Casual Leave Approved' },
-  { id: 5, date: '2025-05-15', checkIn: '09:05 AM', checkOut: '06:10 PM', workingHours: '9h 05m', status: 'Present', mode: 'Office Biometric' },
-  { id: 6, date: '2025-05-14', checkIn: '09:40 AM', checkOut: '06:45 PM', workingHours: '9h 05m', status: 'Late', mode: 'Office Biometric' },
-];
-
-const initialLeaves = [
-  { id: 'LR-201', type: 'Casual Leave', from: '2025-06-02', to: '2025-06-03', days: 2, reason: 'Family engagement and travel', status: 'Approved', appliedOn: '2025-05-15' },
-  { id: 'LR-202', type: 'Medical Leave', from: '2025-05-16', to: '2025-05-16', days: 1, reason: 'Routine health checkup', status: 'Approved', appliedOn: '2025-05-14' },
-  { id: 'LR-203', type: 'Privilege Leave', from: '2025-07-10', to: '2025-07-15', days: 5, reason: 'Annual vacation with family', status: 'Pending Review', appliedOn: '2025-05-18' },
-];
-
 const attendanceSlice = createSlice({
   name: 'attendance',
   initialState: {
-    isCheckedIn: true,
-    lastCheckInTime: '09:02 AM',
+    isCheckedIn: false,
+    lastCheckInTime: null,
     lastCheckOutTime: null,
-    totalWorkMinutesToday: 320,
+    totalWorkMinutesToday: 0,
     leaveBalances: {
-      casual: { total: 12, used: 3, available: 9 },
-      medical: { total: 10, used: 1, available: 9 },
-      privilege: { total: 15, used: 4, available: 11 },
-      compensatory: { total: 4, used: 0, available: 4 },
+      casual: { total: 12, used: 0, available: 12 },
+      medical: { total: 10, used: 0, available: 10 },
+      privilege: { total: 15, used: 0, available: 15 },
+      compensatory: { total: 0, used: 0, available: 0 },
     },
-    logs: initialLogs,
-    leaveRequests: initialLeaves,
+    logs: [],
+    leaveRequests: [],
   },
   reducers: {
     toggleClockInOut: (state) => {

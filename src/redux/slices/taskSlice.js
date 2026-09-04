@@ -49,68 +49,13 @@ export const deleteTaskAsync = createAsyncThunk(
   }
 );
 
-const initialTasks = [
-  {
-    _id: 'tsk_501',
-    id: 'TSK-501',
-    taskId: 'TSK-501',
-    title: 'Implement Multi-Tenant Row Level Security in PostgreSQL',
-    project: null,
-    projectName: 'Enterprise School ERP Platform',
-    assignee: null,
-    assigneeName: 'Priya Sundaram',
-    priority: 'High',
-    status: 'In Progress',
-    deadline: '2025-06-15',
-  },
-  {
-    _id: 'tsk_502',
-    id: 'TSK-502',
-    taskId: 'TSK-502',
-    title: 'Benchmark Vector Embeddings retrieval speed with Qdrant',
-    project: null,
-    projectName: 'Autonomous Legal Contract Analyzer',
-    assignee: null,
-    assigneeName: 'Rohan Mehra',
-    priority: 'Urgent',
-    status: 'To Do',
-    deadline: '2025-06-20',
-  },
-  {
-    _id: 'tsk_503',
-    id: 'TSK-503',
-    taskId: 'TSK-503',
-    title: 'Deploy EKS Autoscaling Worker Nodes with Karpenter',
-    project: null,
-    projectName: 'Multi-Cloud Kubernetes Automation',
-    assignee: null,
-    assigneeName: 'Ananya Verma',
-    priority: 'Urgent',
-    status: 'Review',
-    deadline: '2025-06-10',
-  },
-  {
-    _id: 'tsk_504',
-    id: 'TSK-504',
-    taskId: 'TSK-504',
-    title: 'Conduct weekly SOC Telemetry log audit & generate report',
-    project: null,
-    projectName: 'FinTech SOC 2 Compliance Shield',
-    assignee: null,
-    assigneeName: 'Arjun Dasgupta',
-    priority: 'Medium',
-    status: 'Done',
-    deadline: '2025-05-30',
-  },
-];
-
 const taskSlice = createSlice({
   name: 'tasks',
   initialState: {
-    tasks: initialTasks,
+    tasks: [],
     viewMode: 'kanban', // 'kanban' | 'list'
     filterPriority: 'All',
-    loading: false,
+    loading: true,
     error: null,
   },
   reducers: {

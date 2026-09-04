@@ -11,10 +11,12 @@ import {
   Tag,
   CheckCircle2,
   Info,
+  Pencil,
 } from 'lucide-react';
 import {
   fetchHolidays,
   addHolidayAsync,
+  updateHolidayAsync,
   deleteHolidayAsync,
   setSelectedYear,
 } from '../../redux/slices/holidaySlice';
@@ -26,6 +28,7 @@ export default function Holiday() {
   const { holidays, selectedYear, loading } = useSelector((state) => state.holidays);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingHoliday, setEditingHoliday] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
 
@@ -39,6 +42,19 @@ export default function Holiday() {
   });
 
   const [submitting, setSubmitting] = useState(false);
+
+  // Role and permission check
+  const userRole = (user?.role || '').toLowerCase();
+  const permissions = user?.permissions || [];
+  const canManage =
+    userRole === 'admin' ||
+    userRole === 'superadmin' ||
+    userRole === 'hr' ||
+    userRole === 'manager' ||
+    user?.role === 'HR Administrator' ||
+    user?.role === 'System Administrator' ||
+    user?.role === 'CEO / Executive' ||
+    permissions.includes('manage_holiday');
 
   useEffect(() => {
     dispatch(fetchHolidays({ year: selectedYear, type: selectedType, search: searchTerm }));
@@ -56,13 +72,49 @@ export default function Holiday() {
     }
   };
 
-  const handleAdd = async (e) => {
+  const handleOpenAdd = () => {
+    setEditingHoliday(null);
+    setForm({
+      name: '',
+      date: '',
+      day: 'Monday',
+      type: 'Public Holiday',
+      isOptional: false,
+      description: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (h) => {
+    setEditingHoliday(h);
+    setForm({
+      name: h.name || '',
+      date: h.date || '',
+      day: h.day || 'Monday',
+      type: h.type || 'Public Holiday',
+      isOptional: Boolean(h.isOptional),
+      description: h.description || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.date) return;
     setSubmitting(true);
     try {
-      await dispatch(addHolidayAsync(form)).unwrap();
+      if (editingHoliday) {
+        await dispatch(
+          updateHolidayAsync({
+            id: editingHoliday._id || editingHoliday.id,
+            holidayData: form,
+          })
+        ).unwrap();
+      } else {
+        await dispatch(addHolidayAsync(form)).unwrap();
+      }
       setIsModalOpen(false);
+      setEditingHoliday(null);
       setForm({
         name: '',
         date: '',
@@ -72,7 +124,7 @@ export default function Holiday() {
         description: '',
       });
     } catch (err) {
-      console.error('Failed to add holiday:', err);
+      console.error('Failed to save holiday:', err);
     } finally {
       setSubmitting(false);
     }
@@ -106,10 +158,10 @@ export default function Holiday() {
           </p>
         </div>
 
-        {user?.role === 'HR Administrator' || user?.role === 'System Administrator' || user?.role === 'CEO / Executive' ? (
+        {canManage ? (
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenAdd}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:opacity-95 active:scale-95"
           >
             <Plus size={16} />
@@ -239,14 +291,26 @@ export default function Holiday() {
                       {h.type}
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(h._id || h.id)}
-                      className="p-1.5 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition"
-                      title="Remove Holiday"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {canManage && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(h)}
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                          title="Edit Holiday"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(h._id || h.id)}
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          title="Remove Holiday"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <h3 className="mt-3 font-heading text-base font-bold text-slate-900 group-hover:text-blue-600 transition">
@@ -273,14 +337,21 @@ export default function Holiday() {
         </div>
       )}
 
-      {/* Add Holiday Professional Modal Form */}
+      {/* Add / Edit Holiday Professional Modal Form */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Schedule Company Holiday"
-        subtitle="Publish a new festival, national observance, or optional leave on the corporate calendar"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingHoliday(null);
+        }}
+        title={editingHoliday ? "Edit Company Holiday" : "Schedule Company Holiday"}
+        subtitle={
+          editingHoliday
+            ? "Update festival, national observance, or optional leave schedule"
+            : "Publish a new festival, national observance, or optional leave on the corporate calendar"
+        }
       >
-        <form onSubmit={handleAdd} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
               Holiday Occasion Name *
@@ -366,18 +437,21 @@ export default function Holiday() {
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
             <button
               type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              onClick={() => {
+                setIsModalOpen(false);
+                setEditingHoliday(null);
+              }}
+              className="rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 hover:bg-blue-700 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer"
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
-              <span>Add to Calendar</span>
+              <span>{editingHoliday ? 'Save Changes' : 'Add to Calendar'}</span>
             </button>
           </div>
         </form>

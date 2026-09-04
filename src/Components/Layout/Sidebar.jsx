@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   LayoutDashboard,
   MessageSquare,
+  MessagesSquare,
   Users,
   Clock,
   CalendarDays,
@@ -47,11 +48,17 @@ export default function Sidebar() {
       dispatch(fetchCurrentUser());
     };
 
-    window.addEventListener("gotech_permissions_updated", handlePermissionsUpdated);
+    window.addEventListener(
+      "gotech_permissions_updated",
+      handlePermissionsUpdated,
+    );
     window.addEventListener("focus", handlePermissionsUpdated);
 
     return () => {
-      window.removeEventListener("gotech_permissions_updated", handlePermissionsUpdated);
+      window.removeEventListener(
+        "gotech_permissions_updated",
+        handlePermissionsUpdated,
+      );
       window.removeEventListener("focus", handlePermissionsUpdated);
     };
   }, [dispatch]);
@@ -63,7 +70,9 @@ export default function Sidebar() {
   const hasPermission = (permissionKeys) => {
     if (isSuperadmin) return true;
     if (!permissionKeys) return true;
-    const keys = Array.isArray(permissionKeys) ? permissionKeys : [permissionKeys];
+    const keys = Array.isArray(permissionKeys)
+      ? permissionKeys
+      : [permissionKeys];
     return keys.some((k) => permissions.includes(k));
   };
 
@@ -104,14 +113,14 @@ export default function Sidebar() {
           name: "Projects",
           path: "/projects",
           icon: FolderKanban,
-          badge: "4",
+          badge: "",
           permission: ["manage_project"],
         },
         {
           name: "Task Board",
           path: "/tasks",
           icon: CheckSquare,
-          badge: "5",
+          badge: "",
           permission: ["manage_task"],
         },
         {
@@ -119,6 +128,12 @@ export default function Sidebar() {
           path: "/holidays",
           icon: CalendarDays,
           permission: ["manage_holiday"],
+        },
+        {
+          name: "Team Discussions",
+          path: "/discussions",
+          icon: MessagesSquare,
+          permission: null,
         },
       ],
     },
@@ -171,6 +186,12 @@ export default function Sidebar() {
           path: "/applications",
           icon: UserCheck,
           permission: ["manage_career"],
+        },
+        {
+          name: "Client Inquiries",
+          path: "/contacts",
+          icon: MessageSquare,
+          permission: ["manage_contacts", "manage_career", "manage_dashboard"],
         },
         {
           name: "Grievances & Policy",
@@ -233,11 +254,13 @@ export default function Sidebar() {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r border-slate-200/90 bg-white transition-all duration-300 shadow-xs ${sidebarCollapsed ? "w-20" : "w-64 sm:w-72"
-          } ${mobileSidebarOpen
+        className={`fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r border-slate-200/90 bg-white transition-all duration-300 shadow-xs ${
+          sidebarCollapsed ? "w-20" : "w-64 sm:w-72"
+        } ${
+          mobileSidebarOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0"
-          }`}
+        }`}
       >
         {/* Brand Header */}
         <div className="flex h-18 items-center justify-between border-b border-slate-100 px-5">
@@ -256,7 +279,6 @@ export default function Sidebar() {
                 <span className="font-heading text-base font-extrabold tracking-tight text-slate-900">
                   GoTech<span className="text-blue-600">Edu</span>
                 </span>
-
               </div>
             )}
           </Link>
@@ -299,16 +321,18 @@ export default function Sidebar() {
                       to={item.path}
                       onClick={handleNavClick}
                       title={sidebarCollapsed ? item.name : undefined}
-                      className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-150 ${isActive
-                        ? "bg-blue-50/90 text-blue-700 font-bold shadow-2xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
+                      className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-150 ${
+                        isActive
+                          ? "bg-blue-50/90 text-blue-700 font-bold shadow-2xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
                     >
                       <div
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center transition-transform group-hover:scale-110 ${isActive
-                          ? "text-blue-600"
-                          : "text-slate-400 group-hover:text-slate-600"
-                          }`}
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center transition-transform group-hover:scale-110 ${
+                          isActive
+                            ? "text-blue-600"
+                            : "text-slate-400 group-hover:text-slate-600"
+                        }`}
                       >
                         <Icon size={18} />
                       </div>
@@ -318,10 +342,11 @@ export default function Sidebar() {
                           <span className="truncate">{item.name}</span>
                           {item.badge && (
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${isActive
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
-                                }`}
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
+                                isActive
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
+                              }`}
                             >
                               {item.badge}
                             </span>

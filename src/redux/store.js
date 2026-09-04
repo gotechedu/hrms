@@ -12,6 +12,7 @@ import blogReducer from './slices/blogSlice';
 import profileReducer from './slices/profileSlice';
 import uiReducer from './slices/uiSlice';
 import chatReducer from './slices/chatSlice';
+import discussionReducer from './slices/discussionSlice';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     profile: profileReducer,
     ui: uiReducer,
     chat: chatReducer,
+    discussion: discussionReducer,
   },
 });
 

@@ -76,7 +76,7 @@ export default function Dashboard() {
 
   const activeEmployeesCount = stats?.active || employees.filter((e) => e.status === 'Active').length;
   const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
-  const nextHoliday = (holidays && holidays[0]) || { name: 'Independence Day', date: '15 Aug 2026' };
+  const nextHoliday = holidays && holidays.length > 0 ? holidays[0] : null;
 
   // Role display label
   const roleDisplayNames = {
@@ -185,10 +185,10 @@ export default function Dashboard() {
           />
           <StatCard
             title="Active Projects"
-            value={projects.length || 4}
-            change="+1 New"
+            value={projects.length}
+            change={projects.length > 0 ? `${projects.length} Active` : 'No Active Projects'}
             isPositive={true}
-            period="this month"
+            period="portfolio"
             icon={FolderKanban}
             iconBg="bg-indigo-50"
             iconColor="text-indigo-600"
@@ -196,8 +196,8 @@ export default function Dashboard() {
           />
           <StatCard
             title="Open Applicants"
-            value={candidates.length || 6}
-            change="3 Screened"
+            value={candidates.length}
+            change={candidates.length > 0 ? `${candidates.length} Total` : 'No Applicants'}
             isPositive={true}
             period="pipeline"
             icon={UserCheck}
@@ -212,8 +212,8 @@ export default function Dashboard() {
         <div className="grid gap-4 sm:gap-5 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Team Members"
-            value={employees.filter((e) => e.department === (user?.employeeProfile?.department || 'Engineering')).length || 4}
-            change="100% Active"
+            value={employees.filter((e) => e.department === (user?.employeeProfile?.department || 'Engineering')).length}
+            change="Assigned Squad"
             isPositive={true}
             period="assigned"
             icon={Users}
@@ -223,10 +223,10 @@ export default function Dashboard() {
           />
           <StatCard
             title="Sprint Deliverables"
-            value={pendingTasks || 8}
-            change="84% Velocity"
+            value={pendingTasks}
+            change={pendingTasks > 0 ? `${pendingTasks} In Progress` : 'All Caught Up'}
             isPositive={true}
-            period="sprint 24"
+            period="active sprint"
             icon={CheckSquare}
             iconBg="bg-cyan-50"
             iconColor="text-cyan-600"
@@ -234,8 +234,8 @@ export default function Dashboard() {
           />
           <StatCard
             title="Active Projects"
-            value={projects.length || 3}
-            change="On Track"
+            value={projects.length}
+            change={projects.length > 0 ? 'On Track' : 'No Projects'}
             isPositive={true}
             period="milestones"
             icon={FolderKanban}
@@ -244,9 +244,9 @@ export default function Dashboard() {
             badgeText="Managed"
           />
           <StatCard
-            title="Pending Sign-Offs"
-            value="2"
-            change="Timesheets"
+            title="Review Tasks"
+            value={tasks.filter((t) => t.status === 'Review').length}
+            change="Awaiting QA"
             isPositive={false}
             period="awaiting"
             icon={FileSpreadsheet}
@@ -262,7 +262,7 @@ export default function Dashboard() {
           <StatCard
             title="My Shift Status"
             value={isCheckedIn ? 'Checked In' : 'Checked Out'}
-            change={isCheckedIn ? `Since ${lastCheckInTime}` : 'Shift Offline'}
+            change={isCheckedIn ? `Since ${lastCheckInTime || '09:00 AM'}` : 'Shift Offline'}
             isPositive={isCheckedIn}
             period="today"
             icon={Clock}
@@ -272,8 +272,8 @@ export default function Dashboard() {
           />
           <StatCard
             title="Assigned Tasks"
-            value={pendingTasks || 5}
-            change="2 Due Today"
+            value={pendingTasks}
+            change={pendingTasks > 0 ? `${pendingTasks} Pending` : 'Queue Clear'}
             isPositive={true}
             period="my queue"
             icon={CheckSquare}
@@ -283,7 +283,7 @@ export default function Dashboard() {
           />
           <StatCard
             title="Leave Balance"
-            value={`${leaveBalances?.casual || 12} Days`}
+            value={`${leaveBalances?.casual?.available ?? 12} Days`}
             change="Paid Leave"
             isPositive={true}
             period="available"
@@ -294,8 +294,8 @@ export default function Dashboard() {
           />
           <StatCard
             title="Next Holiday"
-            value={nextHoliday.name}
-            change={nextHoliday.date}
+            value={nextHoliday ? nextHoliday.name : 'No Upcoming Holiday'}
+            change={nextHoliday ? nextHoliday.date : 'Calendar Clear'}
             isPositive={true}
             period="official"
             icon={Award}
