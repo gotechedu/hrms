@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   FolderKanban,
   Plus,
@@ -11,39 +11,41 @@ import {
   Clock,
   TrendingUp,
   Tag,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   fetchProjects,
   addProjectAsync,
   updateProjectProgressAsync,
   deleteProjectAsync,
   setFilterStatus,
-} from '../../redux/slices/projectSlice';
-import { employeeApi } from '../../Service/employeeApi';
-import Modal from '../../Components/Common/Modal';
+} from "../../redux/slices/projectSlice";
+import { employeeApi } from "../../Service/employeeApi";
+import Modal from "../../Components/Common/Modal";
 
 export default function Projects() {
   const dispatch = useDispatch();
-  const { projects, filterStatus, loading } = useSelector((state) => state.projects);
+  const { projects, filterStatus, loading } = useSelector(
+    (state) => state.projects,
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Dynamic system employees for Lead Architect dropdown
   const [dbEmployees, setDbEmployees] = useState([]);
 
   const [form, setForm] = useState({
-    name: '',
-    client: '',
-    category: 'Full-Stack Web & Mobile',
-    lead: '',
-    leadName: '',
-    budget: '₹35,00,000',
-    startDate: '',
-    deadline: '',
-    tagsInput: 'React, Node.js, PostgreSQL',
-    description: '',
+    name: "",
+    client: "",
+    category: "Full-Stack Web & Mobile",
+    lead: "",
+    leadName: "",
+    budget: "₹35,00,000",
+    startDate: "",
+    deadline: "",
+    tagsInput: "React, Node.js, PostgreSQL",
+    description: "",
   });
 
   useEffect(() => {
@@ -54,21 +56,27 @@ export default function Projects() {
   const loadEmployees = async () => {
     try {
       const res = await employeeApi.getEmployees();
-      setDbEmployees(res.data || []);
+      setDbEmployees(res.employees || res.data || []);
     } catch (err) {
-      console.error('Failed to load employees for project lead dropdown:', err);
+      console.error("Failed to load employees for project lead dropdown:", err);
     }
   };
 
   const handleLeadSelect = (e) => {
     const empId = e.target.value;
-    const selected = dbEmployees.find((emp) => (emp._id || emp.employeeId) === empId);
+    if (!empId) {
+      setForm({ ...form, lead: "", leadName: "" });
+      return;
+    }
+    const selected = dbEmployees.find(
+      (emp) => String(emp._id || emp.id || emp.employeeId) === String(empId),
+    );
     const fullName = selected
-      ? `${selected.firstName || ''} ${selected.lastName || ''}`.trim()
-      : e.target.selectedOptions[0]?.text || '';
+      ? `${selected.firstName || ""} ${selected.lastName || ""}`.trim()
+      : e.target.selectedOptions[0]?.text || "";
     setForm({
       ...form,
-      lead: empId,
+      lead: selected?._id || empId,
       leadName: fullName,
     });
   };
@@ -79,7 +87,10 @@ export default function Projects() {
     setSubmitting(true);
     try {
       const tags = form.tagsInput
-        ? form.tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
+        ? form.tagsInput
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
         : [];
       await dispatch(
         addProjectAsync({
@@ -93,23 +104,23 @@ export default function Projects() {
           deadline: form.deadline,
           tags,
           description: form.description,
-        })
+        }),
       ).unwrap();
       setIsModalOpen(false);
       setForm({
-        name: '',
-        client: '',
-        category: 'Full-Stack Web & Mobile',
-        lead: '',
-        leadName: '',
-        budget: '₹35,00,000',
-        startDate: '',
-        deadline: '',
-        tagsInput: 'React, Node.js, PostgreSQL',
-        description: '',
+        name: "",
+        client: "",
+        category: "Full-Stack Web & Mobile",
+        lead: "",
+        leadName: "",
+        budget: "₹35,00,000",
+        startDate: "",
+        deadline: "",
+        tagsInput: "React, Node.js, PostgreSQL",
+        description: "",
       });
     } catch (err) {
-      console.error('Failed to create project:', err);
+      console.error("Failed to create project:", err);
     } finally {
       setSubmitting(false);
     }
@@ -121,13 +132,13 @@ export default function Projects() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to remove this project?')) {
+    if (window.confirm("Are you sure you want to remove this project?")) {
       dispatch(deleteProjectAsync(id));
     }
   };
 
   const filteredProjects = projects.filter((p) => {
-    const matchesStatus = filterStatus === 'All' || p.status === filterStatus;
+    const matchesStatus = filterStatus === "All" || p.status === filterStatus;
     const matchesSearch =
       (p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.client && p.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -147,7 +158,8 @@ export default function Projects() {
             Projects & Deliverables Engine
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Monitor engineering squad assignments, milestone delivery pace, tech stacks, and budget velocity
+            Monitor engineering squad assignments, milestone delivery pace, tech
+            stacks, and budget velocity
           </p>
         </div>
 
@@ -164,7 +176,10 @@ export default function Projects() {
       {/* Filter and Search controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             type="text"
             placeholder="Search project name, client, architect..."
@@ -175,15 +190,15 @@ export default function Projects() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {['All', 'In Progress', 'Review & QA', 'Completed'].map((status) => (
+          {["All", "In Progress", "Review & QA", "Completed"].map((status) => (
             <button
               key={status}
               type="button"
               onClick={() => dispatch(setFilterStatus(status))}
               className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
                 filterStatus === status
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:border-blue-300"
               }`}
             >
               {status}
@@ -196,12 +211,16 @@ export default function Projects() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">
           <Loader2 size={32} className="animate-spin text-blue-600 mb-3" />
-          <p className="text-xs font-medium">Fetching portfolio deliverables from backend...</p>
+          <p className="text-xs font-medium">
+            Fetching portfolio deliverables from backend...
+          </p>
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center">
           <FolderKanban size={40} className="mx-auto text-slate-300 mb-3" />
-          <h3 className="text-base font-bold text-slate-800">No Projects Found</h3>
+          <h3 className="text-base font-bold text-slate-800">
+            No Projects Found
+          </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
             No active project deliverables match your search criteria.
           </p>
@@ -209,8 +228,8 @@ export default function Projects() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2">
           {filteredProjects.map((proj) => {
-            const isDone = proj.status === 'Completed' || proj.progress === 100;
-            const isReview = proj.status === 'Review & QA';
+            const isDone = proj.status === "Completed" || proj.progress === 100;
+            const isReview = proj.status === "Review & QA";
 
             return (
               <div
@@ -226,10 +245,10 @@ export default function Projects() {
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
                           isDone
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : isReview
-                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                            : 'bg-blue-50 text-blue-700 border border-blue-200'
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : "bg-blue-50 text-blue-700 border border-blue-200"
                         }`}
                       >
                         {proj.status}
@@ -248,14 +267,17 @@ export default function Projects() {
                     {proj.name}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Client: <strong className="text-slate-800">{proj.client}</strong>
+                    Client:{" "}
+                    <strong className="text-slate-800">{proj.client}</strong>
                   </p>
 
                   {/* Progress Bar */}
                   <div className="mt-5 rounded-2xl bg-slate-50 p-4 border border-slate-100">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-900 mb-2">
                       <span>Milestone Delivery Velocity</span>
-                      <span className="font-mono text-blue-600">{proj.progress}%</span>
+                      <span className="font-mono text-blue-600">
+                        {proj.progress}%
+                      </span>
                     </div>
                     <div className="h-2.5 w-full rounded-full bg-slate-200 overflow-hidden">
                       <div
@@ -268,14 +290,20 @@ export default function Projects() {
                   {/* Lead Architect & Budget Specs */}
                   <div className="mt-4 grid grid-cols-2 gap-2.5 text-xs">
                     <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                      <span className="text-slate-400 uppercase font-bold text-[10px] block">Lead Architect</span>
+                      <span className="text-slate-400 uppercase font-bold text-[10px] block">
+                        Lead Architect
+                      </span>
                       <span className="font-semibold text-slate-900 truncate block">
-                        👤 {proj.leadName || proj.lead || 'Assigned Lead'}
+                        👤 {proj.leadName || proj.lead || "Assigned Lead"}
                       </span>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                      <span className="text-slate-400 uppercase font-bold text-[10px] block">Allocated Budget</span>
-                      <span className="font-semibold text-slate-900 font-mono block">{proj.budget}</span>
+                      <span className="text-slate-400 uppercase font-bold text-[10px] block">
+                        Allocated Budget
+                      </span>
+                      <span className="font-semibold text-slate-900 font-mono block">
+                        {proj.budget}
+                      </span>
                     </div>
                   </div>
 
@@ -297,13 +325,21 @@ export default function Projects() {
                 {/* Footer Controls */}
                 <div className="mt-6 border-t border-slate-100 pt-4 flex items-center justify-between">
                   <span className="text-xs text-slate-500 font-medium">
-                    Deadline: <strong className="text-slate-900 font-mono">{proj.deadline}</strong>
+                    Deadline:{" "}
+                    <strong className="text-slate-900 font-mono">
+                      {proj.deadline}
+                    </strong>
                   </span>
 
                   {!isDone && (
                     <button
                       type="button"
-                      onClick={() => handleIncrementProgress(proj._id || proj.id, proj.progress)}
+                      onClick={() =>
+                        handleIncrementProgress(
+                          proj._id || proj.id,
+                          proj.progress,
+                        )
+                      }
                       className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition"
                     >
                       +5% Progress
@@ -362,7 +398,9 @@ export default function Projects() {
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
               >
-                <option value="Full-Stack Web & Mobile">Full-Stack Web & Mobile</option>
+                <option value="Full-Stack Web & Mobile">
+                  Full-Stack Web & Mobile
+                </option>
                 <option value="GenAI & Multi-Agent">GenAI & Multi-Agent</option>
                 <option value="Cloud DevOps">Cloud DevOps</option>
                 <option value="Cybersecurity">Cybersecurity</option>
@@ -383,8 +421,11 @@ export default function Projects() {
               >
                 <option value="">Select Employee from System DB</option>
                 {dbEmployees.map((emp) => (
-                  <option key={emp._id || emp.employeeId} value={emp._id || emp.employeeId}>
-                    {emp.firstName} {emp.lastName} — {emp.designation || emp.department}
+                  <option
+                    key={emp._id || emp.id || emp.employeeId}
+                    value={emp._id || emp.id}
+                  >
+                    {emp.name} — {emp.designation || emp.department}
                   </option>
                 ))}
               </select>
@@ -412,7 +453,9 @@ export default function Projects() {
               <input
                 type="date"
                 value={form.startDate}
-                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, startDate: e.target.value })
+                }
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
               />
             </div>
@@ -452,7 +495,9 @@ export default function Projects() {
               rows={2}
               placeholder="Brief summary of project scope, SLA requirements, and key deliverables..."
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
             />
           </div>

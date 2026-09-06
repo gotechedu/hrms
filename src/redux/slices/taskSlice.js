@@ -98,14 +98,13 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload && action.payload.length > 0) {
-          state.tasks = action.payload.map((t) => ({
-            ...t,
-            id: t.taskId || t._id,
-            project: t.projectName || (t.project ? t.project.name : 'General Project'),
-            assignee: t.assigneeName || (t.assignee ? `${t.assignee.firstName} ${t.assignee.lastName}` : 'Unassigned'),
-          }));
-        }
+        const list = Array.isArray(action.payload) ? action.payload : [];
+        state.tasks = list.map((t) => ({
+          ...t,
+          id: t.taskId || t._id,
+          project: t.projectName || (t.project && typeof t.project === 'object' ? t.project.name : (t.project || 'General Project')),
+          assignee: t.assigneeName || (t.assignee && typeof t.assignee === 'object' ? `${t.assignee.firstName || ''} ${t.assignee.lastName || ''}`.trim() : (t.assignee || 'Unassigned')),
+        }));
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
@@ -113,11 +112,12 @@ const taskSlice = createSlice({
       })
       .addCase(addTaskAsync.fulfilled, (state, action) => {
         const t = action.payload;
+        if (!t) return;
         const item = {
           ...t,
           id: t.taskId || t._id,
-          project: t.projectName || (t.project ? t.project.name : 'General Project'),
-          assignee: t.assigneeName || (t.assignee ? `${t.assignee.firstName} ${t.assignee.lastName}` : 'Unassigned'),
+          project: t.projectName || (t.project && typeof t.project === 'object' ? t.project.name : (t.project || 'General Project')),
+          assignee: t.assigneeName || (t.assignee && typeof t.assignee === 'object' ? `${t.assignee.firstName || ''} ${t.assignee.lastName || ''}`.trim() : (t.assignee || 'Unassigned')),
         };
         state.tasks.unshift(item);
       })

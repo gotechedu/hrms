@@ -246,8 +246,10 @@ export default function Holiday() {
             onChange={(e) => dispatch(setSelectedYear(e.target.value))}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:border-blue-600 focus:outline-none"
           >
+            <option value="2026">Year 2026 (Current)</option>
             <option value="2025">Year 2025</option>
-            <option value="2026">Year 2026</option>
+            <option value="2027">Year 2027</option>
+            <option value="All">All Years</option>
           </select>
         </div>
       </div>

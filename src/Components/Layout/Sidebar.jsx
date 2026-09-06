@@ -76,155 +76,214 @@ export default function Sidebar() {
     return keys.some((k) => permissions.includes(k));
   };
 
-  const navSections = [
-    {
-      group: "Main Overview",
-      items: [
-        {
-          name: "Dashboard",
-          path: "/",
-          icon: LayoutDashboard,
-          permission: ["manage_dashboard"],
-        },
-        {
-          name: "Employee Directory",
-          path: "/employees",
-          icon: Users,
-          permission: ["manage_employee"],
-        },
-      ],
-    },
-    {
-      group: "Operations & Work",
-      items: [
-        {
-          name: "Attendance & Leaves",
-          path: "/attendance",
-          icon: Clock,
-          permission: ["manage_attandance", "manage_attendance"],
-        },
-        {
-          name: "Timesheets",
-          path: "/timesheets",
-          icon: FileSpreadsheet,
-          permission: ["manage_timesheet"],
-        },
-        {
-          name: "Projects",
-          path: "/projects",
-          icon: FolderKanban,
-          badge: "",
-          permission: ["manage_project"],
-        },
-        {
-          name: "Task Board",
-          path: "/tasks",
-          icon: CheckSquare,
-          badge: "",
-          permission: ["manage_task"],
-        },
-        {
-          name: "Holiday Calendar",
-          path: "/holidays",
-          icon: CalendarDays,
-          permission: ["manage_holiday"],
-        },
-        {
-          name: "Team Discussions",
-          path: "/discussions",
-          icon: MessagesSquare,
-          permission: null,
-        },
-      ],
-    },
-    // {
-    //   group: "Finance & Payroll",
-    //   items: [
-    //     {
-    //       name: "Payroll Central",
-    //       path: "/payroll",
-    //       icon: DollarSign,
-    //       permission: ["manage_payroll", "payroll"],
-    //     },
-    //     {
-    //       name: "Org Employees",
-    //       path: "/payroll/org-employees",
-    //       icon: Building2,
-    //       permission: ["manage_payroll", "payroll"],
-    //     },
-    //     {
-    //       name: "Students / Interns",
-    //       path: "/payroll/students",
-    //       icon: GraduationCap,
-    //       permission: ["manage_payroll", "payroll"],
-    //     },
-    //     {
-    //       name: "IT Solutions",
-    //       path: "/payroll/it-solutions",
-    //       icon: Briefcase,
-    //       permission: ["manage_payroll", "payroll"],
-    //     },
-    //   ],
-    // },
-    {
-      group: "Talent & Growth",
-      items: [
-        {
-          name: "Learning Hub",
-          path: "/learninghub",
-          icon: GraduationCap,
-          permission: ["manage_learninghub"],
-        },
-        {
-          name: "Career Postings",
-          path: "/careerpost",
-          icon: Briefcase,
-          permission: ["manage_career"],
-        },
-        {
-          name: "Applications",
-          path: "/applications",
-          icon: UserCheck,
-          permission: ["manage_career"],
-        },
-        {
-          name: "Client Inquiries",
-          path: "/contacts",
-          icon: MessageSquare,
-          permission: ["manage_contacts", "manage_career", "manage_dashboard"],
-        },
-        {
-          name: "Grievances & Policy",
-          path: "/accusations",
-          icon: ShieldAlert,
-          permission: ["manage_career"],
-        },
-        {
-          name: "Company Bulletins",
-          path: "/blogs",
-          icon: Newspaper,
-          permission: ["manage_blogs"],
-        },
-      ],
-    },
-    {
-      group: "Administration & System",
-      items: [
-        {
-          name: "System Settings",
-          path: "/settings",
-          icon: Settings,
-          permission: ["manage_settings", "settings", "roles_permissions"],
-        },
-        {
-          name: "Recycle Bin",
-          path: "/recycle-bin",
-          icon: Trash2,
-          permission: ["manage_recycle_bin", "recycle_bin"],
-        },
-      ],
-    },
-  ]
+  let rawNavSections = [];
+
+  if (role === 'trainee') {
+    rawNavSections = [
+      {
+        group: 'My Learning Space',
+        items: [
+          {
+            name: 'My Learning Hub',
+            path: '/learninghub',
+            icon: GraduationCap,
+          },
+          {
+            name: 'Live Lectures',
+            path: '/learninghub',
+            icon: Clock,
+          },
+          {
+            name: 'Assignments',
+            path: '/learninghub',
+            icon: CheckSquare,
+          },
+        ],
+      },
+      {
+        group: 'Community & Ethics',
+        items: [
+          {
+            name: 'Peer Discussions',
+            path: '/discussions',
+            icon: MessagesSquare,
+          },
+          {
+            name: 'Policy & Grievance',
+            path: '/accusations',
+            icon: ShieldAlert,
+          },
+          {
+            name: 'Student Profile',
+            path: '/profile',
+            icon: User,
+          },
+        ],
+      },
+    ];
+  } else if (role === 'trainer') {
+    rawNavSections = [
+      {
+        group: 'Trainer Portal',
+        items: [
+          {
+            name: 'Instructor Hub',
+            path: '/learninghub',
+            icon: LayoutDashboard,
+          },
+          {
+            name: 'Cohort Batches',
+            path: '/learninghub/batches',
+            icon: Users,
+          },
+        ],
+      },
+      {
+        group: 'Workspace',
+        items: [
+          {
+            name: 'Team Discussions',
+            path: '/discussions',
+            icon: MessagesSquare,
+          },
+          {
+            name: 'Trainer Profile',
+            path: '/profile',
+            icon: User,
+          },
+        ],
+      },
+    ];
+  } else {
+    rawNavSections = [
+      {
+        group: 'Main Overview',
+        items: [
+          {
+            name: 'Dashboard',
+            path: '/',
+            icon: LayoutDashboard,
+            permission: ['manage_dashboard'],
+          },
+          {
+            name: 'Employee Directory',
+            path: '/employees',
+            icon: Users,
+            permission: ['manage_employee'],
+          },
+        ],
+      },
+      {
+        group: 'Operations & Work',
+        items: [
+          {
+            name: 'Attendance & Leaves',
+            path: '/attendance',
+            icon: Clock,
+            permission: ['manage_attandance', 'manage_attendance'],
+          },
+          {
+            name: 'Timesheets',
+            path: '/timesheets',
+            icon: FileSpreadsheet,
+            permission: ['manage_timesheet'],
+          },
+          {
+            name: 'Projects',
+            path: '/projects',
+            icon: FolderKanban,
+            badge: '',
+            permission: ['manage_project'],
+          },
+          {
+            name: 'Task Board',
+            path: '/tasks',
+            icon: CheckSquare,
+            badge: '',
+            permission: ['manage_task'],
+          },
+          {
+            name: 'Holiday Calendar',
+            path: '/holidays',
+            icon: CalendarDays,
+            permission: ['manage_holiday'],
+          },
+          {
+            name: 'Team Discussions',
+            path: '/discussions',
+            icon: MessagesSquare,
+            permission: null,
+          },
+        ],
+      },
+      {
+        group: 'Talent & Growth',
+        items: [
+          {
+            name: 'Learning Hub',
+            path: '/learninghub',
+            icon: GraduationCap,
+            permission: ['manage_learninghub'],
+          },
+          {
+            name: 'Cohort Batches',
+            path: '/learninghub/batches',
+            icon: Users,
+            permission: ['manage_learninghub'],
+          },
+          {
+            name: 'Career Postings',
+            path: '/careerpost',
+            icon: Briefcase,
+            permission: ['manage_career'],
+          },
+          {
+            name: 'Applications',
+            path: '/applications',
+            icon: UserCheck,
+            permission: ['manage_career'],
+          },
+          {
+            name: 'Client Inquiries',
+            path: '/contacts',
+            icon: MessageSquare,
+            permission: ['manage_contacts', 'manage_career', 'manage_dashboard'],
+          },
+          {
+            name: 'Grievances & Policy',
+            path: '/accusations',
+            icon: ShieldAlert,
+            permission: null,
+          },
+          {
+            name: 'Company Bulletins',
+            path: '/blogs',
+            icon: Newspaper,
+            permission: ['manage_blogs'],
+          },
+        ],
+      },
+      {
+        group: 'Administration & System',
+        items: [
+          {
+            name: 'System Settings',
+            path: '/settings',
+            icon: Settings,
+            permission: ['manage_settings', 'settings', 'roles_permissions'],
+          },
+          {
+            name: 'Recycle Bin',
+            path: '/recycle-bin',
+            icon: Trash2,
+            permission: ['manage_recycle_bin', 'recycle_bin'],
+          },
+        ],
+      },
+    ];
+  }
+
+  const navSections = rawNavSections
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => hasPermission(item.permission)),

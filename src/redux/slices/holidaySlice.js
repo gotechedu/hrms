@@ -49,11 +49,13 @@ export const deleteHolidayAsync = createAsyncThunk(
   }
 );
 
+const currentYear = new Date().getFullYear().toString();
+
 const holidaySlice = createSlice({
   name: 'holidays',
   initialState: {
     holidays: [],
-    selectedYear: '2025',
+    selectedYear: currentYear,
     loading: true,
     error: null,
   },

@@ -13,33 +13,6 @@ import {
 } from "lucide-react";
 import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
 
-const DEMO_QUICK_FILLS = [
-  {
-    label: "Superadmin",
-    email: "admin@gmail.com",
-    password: "admin123",
-    roleBadge: "👑 Superadmin",
-  },
-  {
-    label: "HR Admin",
-    email: "vikram.sharma@gotechedu.com",
-    password: "Password@123",
-    roleBadge: "💼 HR Head",
-  },
-  {
-    label: "Manager",
-    email: "priya.nair@gotechedu.com",
-    password: "Password@123",
-    roleBadge: "📊 Manager",
-  },
-  {
-    label: "Dev Staff",
-    email: "aarav.patel@gotechedu.com",
-    password: "Password@123",
-    roleBadge: "💻 Employee",
-  },
-];
-
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -47,8 +20,8 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "admin@gmail.com",
-    password: "admin123",
+    email: "",
+    password: "",
   });
 
   const handleSubmit = async (e) => {
@@ -85,7 +58,11 @@ export default function Login() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
         {/* Brand Logo */}
         <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1">
-          <img src="/icons.png" alt="GoTechEdu Logo" className="h-14 w-14 object-contain rounded-xl" />
+          <img
+            src="/icons.png"
+            alt="GoTechEdu Logo"
+            className="h-14 w-14 object-contain rounded-xl"
+          />
         </div>
         <h2 className="mt-4 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           GoTech<span className="text-blue-600">Edu</span>

@@ -21,6 +21,10 @@ import Tasks from './pages/Tasks/Tasks';
 import Holiday from './pages/Holiday/Holiday';
 import LearningHub from './pages/LearnginHub/LearningHub';
 import CourseDetails from './pages/LearnginHub/CourseDetails';
+import BatchManager from './pages/LearnginHub/BatchManager';
+import TrainerHub from './pages/LearnginHub/TrainerHub';
+import TraineeLearningHub from './pages/LearnginHub/TraineeLearningHub';
+import CoursePlayer from './pages/LearnginHub/CoursePlayer';
 import CareerPost from './pages/CareerPost/CareerPost';
 import JobDetails from './pages/CareerPost/JobDetails';
 import Applications from './pages/Applications/Applications';
@@ -108,6 +112,16 @@ export default function App() {
           }
         />
 
+        {/* Dedicated Full-Screen LMS Course Player (Distraction-Free Immersion) */}
+        <Route
+          path="/learninghub/player/:enrollmentId"
+          element={
+            <ProtectedRoute>
+              <CoursePlayer />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Protected Dashboard & Module Routes with Standard Sidebar */}
         <Route
           path="/"
@@ -134,6 +148,9 @@ export default function App() {
 
           {/* Learning & Career */}
           <Route path="learninghub" element={<LearningHub />} />
+          <Route path="learninghub/batches" element={<BatchManager />} />
+          <Route path="learninghub/trainer" element={<TrainerHub />} />
+          <Route path="learninghub/trainee" element={<TraineeLearningHub />} />
           <Route path="learninghub/:id" element={<CourseDetails />} />
           <Route path="careerpost" element={<CareerPost />} />
           <Route path="careerpost/:id" element={<JobDetails />} />

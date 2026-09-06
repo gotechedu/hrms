@@ -22,6 +22,9 @@ export { taskApi } from './taskApi';
 export { offerApi } from './offerApi';
 export { contactApi } from './contactApi';
 export { discussionApi } from './discussionApi';
+export { policyApi } from './policyApi';
+export { grievanceApi } from './grievanceApi';
+export { lmsApi } from './lmsApi';
 
 // Aliases for clean backward compatibility
 export { default as api } from './baseApi';
@@ -42,3 +45,5 @@ export { default as projectService } from './projectApi';
 export { default as taskService } from './taskApi';
 export { default as contactService } from './contactApi';
 export { default as discussionService } from './discussionApi';
+export { default as policyService } from './policyApi';
+export { default as grievanceService } from './grievanceApi';

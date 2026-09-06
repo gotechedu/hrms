@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   CheckSquare,
   Plus,
@@ -13,7 +13,7 @@ import {
   Folder,
   Clock,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   fetchTasks,
   addTaskAsync,
@@ -21,24 +21,42 @@ import {
   deleteTaskAsync,
   setViewMode,
   setFilterPriority,
-} from '../../redux/slices/taskSlice';
-import { projectApi } from '../../Service/projectApi';
-import { employeeApi } from '../../Service/employeeApi';
-import Modal from '../../Components/Common/Modal';
+} from "../../redux/slices/taskSlice";
+import { projectApi } from "../../Service/projectApi";
+import { employeeApi } from "../../Service/employeeApi";
+import Modal from "../../Components/Common/Modal";
 
 const columns = [
-  { id: 'To Do', title: 'To Do', color: 'border-slate-300 bg-slate-100/70 text-slate-700' },
-  { id: 'In Progress', title: 'In Progress', color: 'border-blue-300 bg-blue-50/70 text-blue-700' },
-  { id: 'Review', title: 'Review & QA', color: 'border-purple-300 bg-purple-50/70 text-purple-700' },
-  { id: 'Done', title: 'Done / Completed', color: 'border-emerald-300 bg-emerald-50/70 text-emerald-700' },
+  {
+    id: "To Do",
+    title: "To Do",
+    color: "border-slate-300 bg-slate-100/70 text-slate-700",
+  },
+  {
+    id: "In Progress",
+    title: "In Progress",
+    color: "border-blue-300 bg-blue-50/70 text-blue-700",
+  },
+  {
+    id: "Review",
+    title: "Review & QA",
+    color: "border-purple-300 bg-purple-50/70 text-purple-700",
+  },
+  {
+    id: "Done",
+    title: "Done / Completed",
+    color: "border-emerald-300 bg-emerald-50/70 text-emerald-700",
+  },
 ];
 
 export default function Tasks() {
   const dispatch = useDispatch();
-  const { tasks, viewMode, filterPriority, loading } = useSelector((state) => state.tasks);
+  const { tasks, viewMode, filterPriority, loading } = useSelector(
+    (state) => state.tasks,
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Dynamic dropdown options fetched from real DB
@@ -46,14 +64,14 @@ export default function Tasks() {
   const [dbEmployees, setDbEmployees] = useState([]);
 
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    project: '',
-    projectName: '',
-    assignee: '',
-    assigneeName: '',
-    priority: 'High',
-    deadline: '',
+    title: "",
+    description: "",
+    project: "",
+    projectName: "",
+    assignee: "",
+    assigneeName: "",
+    priority: "High",
+    deadline: "",
     estimatedHours: 8,
   });
 
@@ -68,32 +86,54 @@ export default function Tasks() {
         projectApi.getProjects(),
         employeeApi.getEmployees(),
       ]);
-      setDbProjects(projRes.data || []);
-      setDbEmployees(empRes.data || []);
+      setDbProjects(projRes.data || projRes.projects || []);
+      setDbEmployees(empRes.employees || empRes.data || []);
     } catch (err) {
-      console.error('Failed to load form options:', err);
+      console.error("Failed to load form options:", err);
     }
   };
 
   const handleProjectSelect = (e) => {
     const projId = e.target.value;
-    const selected = dbProjects.find((p) => (p._id || p.id || p.projectId) === projId);
+    if (!projId || projId === "general") {
+      setForm({
+        ...form,
+        project: "",
+        projectName: "General Project",
+      });
+      return;
+    }
+    const selected = dbProjects.find(
+      (p) => String(p._id || p.id) === String(projId),
+    );
     setForm({
       ...form,
-      project: projId,
-      projectName: selected ? selected.name : e.target.selectedOptions[0]?.text || 'General Project',
+      project: selected?._id || projId,
+      projectName: selected
+        ? selected.name
+        : e.target.selectedOptions[0]?.text || "General Project",
     });
   };
 
   const handleAssigneeSelect = (e) => {
     const empId = e.target.value;
-    const selected = dbEmployees.find((emp) => (emp._id || emp.employeeId) === empId);
+    if (!empId || empId === "unassigned") {
+      setForm({
+        ...form,
+        assignee: "",
+        assigneeName: "Unassigned",
+      });
+      return;
+    }
+    const selected = dbEmployees.find(
+      (emp) => String(emp._id || emp.id || emp.employeeId) === String(empId),
+    );
     const fullName = selected
-      ? `${selected.firstName || ''} ${selected.lastName || ''}`.trim()
-      : e.target.selectedOptions[0]?.text || 'Unassigned';
+      ? `${selected.firstName || ""} ${selected.lastName || ""}`.trim()
+      : e.target.selectedOptions[0]?.text || "Unassigned";
     setForm({
       ...form,
-      assignee: empId,
+      assignee: selected?._id || empId,
       assigneeName: fullName,
     });
   };
@@ -106,28 +146,28 @@ export default function Tasks() {
       await dispatch(addTaskAsync(form)).unwrap();
       setIsModalOpen(false);
       setForm({
-        title: '',
-        description: '',
-        project: '',
-        projectName: '',
-        assignee: '',
-        assigneeName: '',
-        priority: 'High',
-        deadline: '',
+        title: "",
+        description: "",
+        project: "",
+        projectName: "",
+        assignee: "",
+        assigneeName: "",
+        priority: "High",
+        deadline: "",
         estimatedHours: 8,
       });
     } catch (err) {
-      console.error('Failed to create task:', err);
+      console.error("Failed to create task:", err);
     } finally {
       setSubmitting(false);
     }
   };
 
   const getNextStatus = (current) => {
-    if (current === 'To Do') return 'In Progress';
-    if (current === 'In Progress') return 'Review';
-    if (current === 'Review') return 'Done';
-    return 'Done';
+    if (current === "To Do") return "In Progress";
+    if (current === "In Progress") return "Review";
+    if (current === "Review") return "Done";
+    return "Done";
   };
 
   const handleAdvanceStatus = (id, currentStatus) => {
@@ -136,17 +176,20 @@ export default function Tasks() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this sprint task?')) {
+    if (window.confirm("Are you sure you want to delete this sprint task?")) {
       dispatch(deleteTaskAsync(id));
     }
   };
 
   const filteredTasks = tasks.filter((t) => {
-    const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
+    const matchesPriority =
+      filterPriority === "All" || t.priority === filterPriority;
     const matchesSearch =
       (t.title && t.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (t.project && t.project.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (t.assignee && t.assignee.toLowerCase().includes(searchTerm.toLowerCase()));
+      (t.project &&
+        t.project.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.assignee &&
+        t.assignee.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesPriority && matchesSearch;
   });
 
@@ -162,7 +205,8 @@ export default function Tasks() {
             Task & Sprint Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Real-time sprint tracking across engineering pods, deliverables, and cross-functional teams
+            Real-time sprint tracking across engineering pods, deliverables, and
+            cross-functional teams
           </p>
         </div>
 
@@ -171,18 +215,22 @@ export default function Tasks() {
           <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
             <button
               type="button"
-              onClick={() => dispatch(setViewMode('kanban'))}
+              onClick={() => dispatch(setViewMode("kanban"))}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                viewMode === 'kanban' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                viewMode === "kanban"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Kanban size={14} /> Kanban
             </button>
             <button
               type="button"
-              onClick={() => dispatch(setViewMode('list'))}
+              onClick={() => dispatch(setViewMode("list"))}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                viewMode === 'list' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                viewMode === "list"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <List size={14} /> List
@@ -203,7 +251,10 @@ export default function Tasks() {
       {/* Filter and Search controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             type="text"
             placeholder="Search task title, project, assignee..."
@@ -214,16 +265,18 @@ export default function Tasks() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          <span className="text-xs font-mono font-bold uppercase text-slate-400 mr-2">Priority:</span>
-          {['All', 'Urgent', 'High', 'Medium', 'Normal'].map((p) => (
+          <span className="text-xs font-mono font-bold uppercase text-slate-400 mr-2">
+            Priority:
+          </span>
+          {["All", "Urgent", "High", "Medium", "Normal"].map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => dispatch(setFilterPriority(p))}
               className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
                 filterPriority === p
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               {p}
@@ -238,7 +291,7 @@ export default function Tasks() {
           <Loader2 size={32} className="animate-spin text-blue-600 mb-3" />
           <p className="text-xs font-medium">Fetching active sprint tasks...</p>
         </div>
-      ) : viewMode === 'kanban' ? (
+      ) : viewMode === "kanban" ? (
         <div className="grid gap-5 lg:grid-cols-4 items-start">
           {columns.map((col) => {
             const colTasks = filteredTasks.filter((t) => t.status === col.id);
@@ -250,7 +303,9 @@ export default function Tasks() {
               >
                 <div>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                    <span className="font-heading text-sm font-bold text-slate-900">{col.title}</span>
+                    <span className="font-heading text-sm font-bold text-slate-900">
+                      {col.title}
+                    </span>
                     <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold text-slate-700 shadow-2xs border border-slate-200">
                       {colTasks.length}
                     </span>
@@ -264,16 +319,16 @@ export default function Tasks() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-mono font-bold text-blue-600 truncate max-w-[130px]">
-                            {task.project || 'General'}
+                            {task.project || "General"}
                           </span>
                           <div className="flex items-center gap-1">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
-                                task.priority === 'Urgent'
-                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                  : task.priority === 'High'
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                task.priority === "Urgent"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : task.priority === "High"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-slate-100 text-slate-600 border border-slate-200"
                               }`}
                             >
                               {task.priority}
@@ -293,22 +348,35 @@ export default function Tasks() {
                         </h4>
 
                         {task.description && (
-                          <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">{task.description}</p>
+                          <p className="mt-1 text-[11px] text-slate-500 line-clamp-2">
+                            {task.description}
+                          </p>
                         )}
 
                         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
                           <span className="font-mono flex items-center gap-1 text-slate-600">
                             <Clock size={11} /> {task.deadline}
                           </span>
-                          <span className="font-semibold text-slate-700 truncate max-w-[100px]" title={task.assignee}>
-                            👤 {task.assignee ? task.assignee.split(' ')[0] : 'Unassigned'}
+                          <span
+                            className="font-semibold text-slate-700 truncate max-w-[100px]"
+                            title={task.assignee}
+                          >
+                            👤{" "}
+                            {task.assignee
+                              ? task.assignee.split(" ")[0]
+                              : "Unassigned"}
                           </span>
                         </div>
 
-                        {task.status !== 'Done' && (
+                        {task.status !== "Done" && (
                           <button
                             type="button"
-                            onClick={() => handleAdvanceStatus(task._id || task.id, task.status)}
+                            onClick={() =>
+                              handleAdvanceStatus(
+                                task._id || task.id,
+                                task.status,
+                              )
+                            }
                             className="mt-2.5 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-slate-50 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 border border-slate-200/80 transition"
                           >
                             <span>Advance to {getNextStatus(task.status)}</span>
@@ -343,24 +411,34 @@ export default function Tasks() {
               <tbody className="divide-y divide-slate-100">
                 {filteredTasks.map((t) => (
                   <tr key={t._id || t.id} className="hover:bg-slate-50/60">
-                    <td className="py-3.5 font-mono font-bold text-slate-800">{t.taskId || t.id}</td>
-                    <td className="py-3.5 font-semibold text-slate-900 max-w-xs">{t.title}</td>
-                    <td className="py-3.5 text-slate-600 font-medium">{t.project}</td>
-                    <td className="py-3.5 text-slate-900 font-medium">{t.assignee}</td>
+                    <td className="py-3.5 font-mono font-bold text-slate-800">
+                      {t.taskId || t.id}
+                    </td>
+                    <td className="py-3.5 font-semibold text-slate-900 max-w-xs">
+                      {t.title}
+                    </td>
+                    <td className="py-3.5 text-slate-600 font-medium">
+                      {t.project}
+                    </td>
+                    <td className="py-3.5 text-slate-900 font-medium">
+                      {t.assignee}
+                    </td>
                     <td className="py-3.5">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          t.priority === 'Urgent'
-                            ? 'bg-rose-50 text-rose-700'
-                            : t.priority === 'High'
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
+                          t.priority === "Urgent"
+                            ? "bg-rose-50 text-rose-700"
+                            : t.priority === "High"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {t.priority}
                       </span>
                     </td>
-                    <td className="py-3.5 font-mono text-slate-500">{t.deadline}</td>
+                    <td className="py-3.5 font-mono text-slate-500">
+                      {t.deadline}
+                    </td>
                     <td className="py-3.5">
                       <span className="rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-[10px] font-bold">
                         {t.status}
@@ -408,18 +486,26 @@ export default function Tasks() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                Linked Project (Dynamic DB) *
+                Linked Project (Dynamic DB)
               </label>
               <select
-                required
-                value={form.project}
+                value={
+                  form.project ||
+                  (form.projectName === "General Project" ? "general" : "")
+                }
                 onChange={handleProjectSelect}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
               >
                 <option value="">Select Project from System DB</option>
+                <option value="general">
+                  📁 General Project / Internal Task
+                </option>
                 {dbProjects.map((p) => (
-                  <option key={p._id || p.id || p.projectId} value={p._id || p.id || p.projectId}>
-                    {p.name} ({p.projectId || 'PRJ'})
+                  <option
+                    key={p._id || p.id || p.projectId}
+                    value={p._id || p.id}
+                  >
+                    {p.name} ({p.projectId || "PRJ"})
                   </option>
                 ))}
               </select>
@@ -427,18 +513,25 @@ export default function Tasks() {
 
             <div>
               <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                Assignee Employee (Dynamic DB) *
+                Assignee Employee (Dynamic DB)
               </label>
               <select
-                required
-                value={form.assignee}
+                value={
+                  form.assignee ||
+                  (form.assigneeName === "Unassigned" ? "unassigned" : "")
+                }
                 onChange={handleAssigneeSelect}
                 className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
               >
                 <option value="">Select Employee from System DB</option>
+                <option value="unassigned">👤 Unassigned / Open Task</option>
                 {dbEmployees.map((emp) => (
-                  <option key={emp._id || emp.employeeId} value={emp._id || emp.employeeId}>
-                    {emp.firstName} {emp.lastName} — {emp.designation || emp.department}
+                  <option
+                    key={emp._id || emp.id || emp.employeeId}
+                    value={emp._id || emp.id}
+                  >
+                    {emp.name} —{" "}
+                    {emp.designation || emp.department || emp.employeeId}
                   </option>
                 ))}
               </select>
@@ -484,7 +577,9 @@ export default function Tasks() {
                 min="1"
                 max="100"
                 value={form.estimatedHours}
-                onChange={(e) => setForm({ ...form, estimatedHours: Number(e.target.value) })}
+                onChange={(e) =>
+                  setForm({ ...form, estimatedHours: Number(e.target.value) })
+                }
                 className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
               />
             </div>
@@ -498,7 +593,9 @@ export default function Tasks() {
               rows={3}
               placeholder="Provide technical execution details and context..."
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-600 focus:outline-none"
             />
           </div>

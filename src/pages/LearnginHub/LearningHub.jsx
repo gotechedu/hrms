@@ -24,8 +24,13 @@ import {
   EyeOff,
   UserCheck,
   Image as ImageIcon,
+  Users,
 } from 'lucide-react';
 import { courseApi, offerApi } from '../../Service';
+import CurriculumBuilderModal from './CurriculumBuilderModal';
+import BatchManager from './BatchManager';
+import TrainerHub from './TrainerHub';
+import TraineeLearningHub from './TraineeLearningHub';
 
 export default function LearningHub() {
   const { user } = useSelector((state) => state.auth);
@@ -37,6 +42,11 @@ export default function LearningHub() {
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+
+  // LMS Studio & Navigation State
+  const [activeTab, setActiveTab] = useState('courses'); // 'courses' | 'batches' | 'trainerHub' | 'traineeHub'
+  const [selectedCourseForCurriculum, setSelectedCourseForCurriculum] = useState(null);
+  const [isCurriculumModalOpen, setIsCurriculumModalOpen] = useState(false);
 
   // Offers & Coupon Management State
   const [isOffersModalOpen, setIsOffersModalOpen] = useState(false);
@@ -275,9 +285,81 @@ export default function LearningHub() {
   const [courseFormTab, setCourseFormTab] = useState(1);
   const [candidateFormTab, setCandidateFormTab] = useState(1);
 
+  // If authenticated user is a Trainee, render their dedicated learner portal
+  if (userRole === 'trainee') {
+    return <TraineeLearningHub />;
+  }
+
+  // If authenticated user is an Instructor / Trainer, render their dedicated cockpit
+  if (userRole === 'trainer') {
+    return <TrainerHub />;
+  }
+
   return (
     <div className="space-y-6 animate-fadeIn pb-16">
-      {/* Header */}
+      {/* LMS Workspace Tab Navigation for Admin & Management */}
+      {canManage && (
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('courses')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'courses'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <BookOpen size={15} />
+            <span>Programs & Curriculum</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('batches')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'batches'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Users size={15} />
+            <span>Cohort Batches</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('trainerHub')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'trainerHub'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Sparkles size={15} />
+            <span>Trainer Command Center</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('traineeHub')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'traineeHub'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <GraduationCap size={15} />
+            <span>Trainee Learner View</span>
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'batches' ? (
+        <BatchManager />
+      ) : activeTab === 'trainerHub' ? (
+        <TrainerHub />
+      ) : activeTab === 'traineeHub' ? (
+        <TraineeLearningHub />
+      ) : (
+        <>
+          {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">
@@ -529,6 +611,18 @@ export default function LearningHub() {
                           <>
                             <button
                               type="button"
+                              onClick={() => {
+                                setSelectedCourseForCurriculum(course);
+                                setIsCurriculumModalOpen(true);
+                              }}
+                              className="rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer flex items-center gap-1"
+                              title="Curriculum Studio (Modules & Lessons)"
+                            >
+                              <Layers size={13} />
+                              <span>Curriculum</span>
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => openEditModal(course)}
                               className="rounded-lg border border-slate-200 p-1 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition cursor-pointer"
                               title="Edit Program"
@@ -640,6 +734,18 @@ export default function LearningHub() {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
+                      onClick={() => {
+                        setSelectedCourseForCurriculum(course);
+                        setIsCurriculumModalOpen(true);
+                      }}
+                      className="rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer flex items-center gap-1"
+                      title="Curriculum Studio (Modules & Lessons)"
+                    >
+                      <Layers size={13} />
+                      <span>Curriculum</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEditModal(course)}
                       className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition cursor-pointer"
                       title="Edit Program"
@@ -660,6 +766,8 @@ export default function LearningHub() {
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
 
       {/* CREATE / EDIT MODAL - TAB WIZED */}
@@ -1685,6 +1793,21 @@ export default function LearningHub() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* CURRICULUM STUDIO MODAL */}
+      {isCurriculumModalOpen && selectedCourseForCurriculum && (
+        <CurriculumBuilderModal
+          course={selectedCourseForCurriculum}
+          isOpen={isCurriculumModalOpen}
+          onClose={() => {
+            setIsCurriculumModalOpen(false);
+            setSelectedCourseForCurriculum(null);
+          }}
+          onSave={() => {
+            fetchCourses();
+          }}
+        />
       )}
     </div>
   );

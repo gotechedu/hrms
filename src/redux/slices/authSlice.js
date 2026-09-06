@@ -11,20 +11,7 @@ try {
   storedUser = null;
 }
 
-// Fallback initial user for demo/offline preview if not logged in
-const defaultFallbackUser = {
-  _id: 'usr-superadmin',
-  name: 'Super Administrator',
-  email: 'admin@gmail.com',
-  role: 'superadmin',
-  status: 'active',
-  employeeProfile: {
-    employeeId: 'GTE-1000',
-    designation: 'Enterprise Superadmin & Owner',
-    department: 'Engineering',
-    location: 'Gurugram, HQ',
-  },
-};
+
 
 // Async Thunks
 export const loginUser = createAsyncThunk(
@@ -112,7 +99,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     token: storedToken,
-    user: storedUser || defaultFallbackUser,
+    user: storedUser ,
     isAuthenticated: Boolean(storedToken || storedUser),
     loading: false,
     error: null,
