@@ -36,7 +36,7 @@ export default function Login() {
     );
 
     if (loginUser.fulfilled.match(result)) {
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 
@@ -56,14 +56,18 @@ export default function Login() {
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        {/* Brand Logo */}
-        <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1">
+        {/* Brand Logo with link to Portal Homepage */}
+        <Link
+          to="/"
+          title="Return to GoTechEdu Portal Homepage"
+          className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1 hover:border-blue-400 transition transform active:scale-95"
+        >
           <img
             src="/icons.png"
             alt="GoTechEdu Logo"
             className="h-14 w-14 object-contain rounded-xl"
           />
-        </div>
+        </Link>
         <h2 className="mt-4 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           GoTech<span className="text-blue-600">Edu</span>
         </h2>

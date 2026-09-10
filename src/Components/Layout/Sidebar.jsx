@@ -161,7 +161,7 @@ export default function Sidebar() {
         items: [
           {
             name: 'Dashboard',
-            path: '/',
+            path: '/dashboard',
             icon: LayoutDashboard,
             permission: ['manage_dashboard'],
           },
@@ -324,7 +324,7 @@ export default function Sidebar() {
         {/* Brand Header */}
         <div className="flex h-18 items-center justify-between border-b border-slate-100 px-5">
           <Link
-            to="/"
+            to="/dashboard"
             onClick={handleNavClick}
             className="flex items-center gap-3 overflow-hidden transition-transform active:scale-95"
           >
@@ -370,8 +370,8 @@ export default function Sidebar() {
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const isActive =
-                    item.path === "/"
-                      ? location.pathname === "/"
+                    item.path === "/dashboard"
+                      ? location.pathname === "/dashboard"
                       : location.pathname.startsWith(item.path);
 
                   return (

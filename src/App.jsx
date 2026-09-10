@@ -3,6 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 
+// SEO & Portal Pages
+import SeoManager from './Components/Common/SeoManager';
+import PortalHome from './pages/Portal/PortalHome';
+
 // Layout
 import MainLayout from './Components/Layout/MainLayout';
 
@@ -97,7 +101,11 @@ export default function App() {
           },
         }}
       />
+      <SeoManager />
       <Routes>
+        {/* Public Portal Homepage */}
+        <Route path="/" element={<PortalHome />} />
+
         {/* Auth Routes */}
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
@@ -124,55 +132,54 @@ export default function App() {
 
         {/* Protected Dashboard & Module Routes with Standard Sidebar */}
         <Route
-          path="/"
           element={
             <ProtectedRoute>
               <MainLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
-          <Route path="employees" element={<Employee />} />
-          <Route path="employees/:id" element={<EmployeeDetails />} />
-          <Route path="attendance" element={<Attandance />} />
-          <Route path="timesheets" element={<TimeSheets />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="holidays" element={<Holiday />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/employees" element={<Employee />} />
+          <Route path="/employees/:id" element={<EmployeeDetails />} />
+          <Route path="/attendance" element={<Attandance />} />
+          <Route path="/timesheets" element={<TimeSheets />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/holidays" element={<Holiday />} />
           
           {/* Payroll Routes */}
-          <Route path="payroll" element={<PayRol />} />
-          <Route path="payroll/org-employees" element={<OrgEmployeePayRol />} />
-          <Route path="payroll/students" element={<StudenPayRol />} />
-          <Route path="payroll/it-solutions" element={<ItSolutionPayRol />} />
+          <Route path="/payroll" element={<PayRol />} />
+          <Route path="/payroll/org-employees" element={<OrgEmployeePayRol />} />
+          <Route path="/payroll/students" element={<StudenPayRol />} />
+          <Route path="/payroll/it-solutions" element={<ItSolutionPayRol />} />
 
           {/* Learning & Career */}
-          <Route path="learninghub" element={<LearningHub />} />
-          <Route path="learninghub/batches" element={<BatchManager />} />
-          <Route path="learninghub/trainer" element={<TrainerHub />} />
-          <Route path="learninghub/trainee" element={<TraineeLearningHub />} />
-          <Route path="learninghub/:id" element={<CourseDetails />} />
-          <Route path="careerpost" element={<CareerPost />} />
-          <Route path="careerpost/:id" element={<JobDetails />} />
-          <Route path="applications" element={<Applications />} />
-          <Route path="applications/:id" element={<ApplicationDetails />} />
+          <Route path="/learninghub" element={<LearningHub />} />
+          <Route path="/learninghub/batches" element={<BatchManager />} />
+          <Route path="/learninghub/trainer" element={<TrainerHub />} />
+          <Route path="/learninghub/trainee" element={<TraineeLearningHub />} />
+          <Route path="/learninghub/:id" element={<CourseDetails />} />
+          <Route path="/careerpost" element={<CareerPost />} />
+          <Route path="/careerpost/:id" element={<JobDetails />} />
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/applications/:id" element={<ApplicationDetails />} />
 
           {/* Client Consultations & Leads */}
-          <Route path="contacts" element={<Contacts />} />
+          <Route path="/contacts" element={<Contacts />} />
 
           {/* Communication & Policy */}
-          <Route path="discussions" element={<Discussions />} />
-          <Route path="accusations" element={<Accusations />} />
-          <Route path="blogs" element={<Blogs />} />
-          <Route path="profile" element={<Profile />} />
+          <Route path="/discussions" element={<Discussions />} />
+          <Route path="/accusations" element={<Accusations />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/profile" element={<Profile />} />
 
           {/* Administration & Settings */}
-          <Route path="settings" element={<Settings />} />
-          <Route path="settings/roles" element={<ManageRole />} />
-          <Route path="settings/permissions" element={<ManagePermission />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/roles" element={<ManageRole />} />
+          <Route path="/settings/permissions" element={<ManagePermission />} />
           
           {/* Universal Recycle Bin */}
-          <Route path="recycle-bin" element={<RecycleBin />} />
+          <Route path="/recycle-bin" element={<RecycleBin />} />
         </Route>
 
         {/* Fallback Catch-All */}

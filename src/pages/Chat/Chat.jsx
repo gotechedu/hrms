@@ -117,7 +117,7 @@ export default function Chat() {
           </div>
 
           <Link
-            to="/"
+            to="/dashboard"
             className="mt-3.5 flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm hover:bg-slate-800 active:scale-98 transition"
           >
             <LayoutDashboard size={15} />
