@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -16,7 +16,13 @@ import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -56,18 +62,14 @@ export default function Login() {
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
-        {/* Brand Logo with link to Portal Homepage */}
-        <Link
-          to="/"
-          title="Return to GoTechEdu Portal Homepage"
-          className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1 hover:border-blue-400 transition transform active:scale-95"
-        >
+        {/* Brand Logo */}
+        <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-slate-200/60 border border-slate-200/80 mb-1">
           <img
             src="/icons.png"
             alt="GoTechEdu Logo"
             className="h-14 w-14 object-contain rounded-xl"
           />
-        </Link>
+        </div>
         <h2 className="mt-4 font-heading text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           GoTech<span className="text-blue-600">Edu</span>
         </h2>

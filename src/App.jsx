@@ -3,9 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 
-// SEO & Portal Pages
+// SEO & Meta
 import SeoManager from './Components/Common/SeoManager';
-import PortalHome from './pages/Portal/PortalHome';
 
 // Layout
 import MainLayout from './Components/Layout/MainLayout';
@@ -103,10 +102,8 @@ export default function App() {
       />
       <SeoManager />
       <Routes>
-        {/* Public Portal Homepage */}
-        <Route path="/" element={<PortalHome />} />
-
-        {/* Auth Routes */}
+        {/* Entry / Auth Routes: / directly renders Login */}
+        <Route path="/" element={<Login />} />
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
 

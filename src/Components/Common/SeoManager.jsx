@@ -2,13 +2,10 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 /**
- * Route title dictionary with prefix matching for GoTechEdu Portal routes
+ * Route title mapping for GoTechEdu Portal
  */
 function getRouteTitle(pathname) {
-  if (pathname === "/") {
-    return "GoTechEdu Portal | Tech, Talent, Training & Transformation";
-  }
-  if (pathname === "/auth/login") {
+  if (pathname === "/" || pathname === "/auth/login") {
     return "GoTechEdu Portal | Sign In";
   }
   if (pathname === "/auth/forgot-password") {
@@ -74,53 +71,33 @@ function getRouteTitle(pathname) {
   if (pathname.startsWith("/recycle-bin")) {
     return "GoTechEdu Portal | Recycle Bin";
   }
-  return "GoTechEdu Portal";
+  return "GoTechEdu Portal | Sign In";
 }
 
 /**
- * SeoManager dynamically manages document title, canonical link,
- * and robots meta directives based on whether the route is the public homepage
- * or private internal application modules.
+ * SeoManager dynamically manages document title and enforces
+ * noindex, nofollow directives across all application routes.
  */
 export default function SeoManager() {
   const location = useLocation();
 
   useEffect(() => {
-    const isPublicHome = location.pathname === "/";
-
     // 1. Dynamic Page Title
     document.title = getRouteTitle(location.pathname);
 
-    // 2. Robots Meta Directive Management
+    // 2. Strict noindex, nofollow on all routes
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
       robotsMeta = document.createElement("meta");
       robotsMeta.setAttribute("name", "robots");
       document.head.appendChild(robotsMeta);
     }
+    robotsMeta.setAttribute("content", "noindex, nofollow");
 
-    if (isPublicHome) {
-      // Public homepage is indexable
-      robotsMeta.setAttribute("content", "index, follow");
-    } else {
-      // CRITICAL: Default all authenticated, auth flows, subroutes,
-      // and unknown private routes strictly to noindex, nofollow
-      robotsMeta.setAttribute("content", "noindex, nofollow");
-    }
-
-    // 3. Canonical Link Management
-    let canonicalLink = document.querySelector('link[rel="canonical"]');
-    if (!canonicalLink) {
-      canonicalLink = document.createElement("link");
-      canonicalLink.setAttribute("rel", "canonical");
-      document.head.appendChild(canonicalLink);
-    }
-
-    if (isPublicHome) {
-      canonicalLink.setAttribute("href", "https://portal.gotechedu.com/");
-    } else {
-      // Remove canonical on private/noindex pages to prevent mistaken consolidation
-      canonicalLink.removeAttribute("href");
+    // 3. Remove any canonical tag to avoid claiming public indexable status
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.remove();
     }
   }, [location.pathname]);
 
