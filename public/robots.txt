@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://portal.gotechedu.com/sitemap.xml
