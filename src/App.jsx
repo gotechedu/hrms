@@ -1,7 +1,8 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
+import { logout, fetchCurrentUser } from './redux/slices/authSlice';
 
 // SEO & Meta
 import SeoManager from './Components/Common/SeoManager';
@@ -62,7 +63,36 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Public Auth Route Wrapper (Redirects authenticated users to /dashboard)
+function PublicAuthRoute({ children }) {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
 export default function App() {
+  const dispatch = useDispatch();
+  const { token, isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    // 1. Auto-handle 401 unauthorized signals across any API call
+    const handleUnauthorized = () => {
+      dispatch(logout());
+    };
+    window.addEventListener('gotech_unauthorized', handleUnauthorized);
+
+    // 2. Refresh & validate user profile if token is present
+    if (token || isAuthenticated) {
+      dispatch(fetchCurrentUser());
+    }
+
+    return () => {
+      window.removeEventListener('gotech_unauthorized', handleUnauthorized);
+    };
+  }, [dispatch, token, isAuthenticated]);
+
   return (
     <BrowserRouter>
       <Toaster
@@ -103,9 +133,30 @@ export default function App() {
       <SeoManager />
       <Routes>
         {/* Entry / Auth Routes: / directly renders Login */}
-        <Route path="/" element={<Login />} />
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/"
+          element={
+            <PublicAuthRoute>
+              <Login />
+            </PublicAuthRoute>
+          }
+        />
+        <Route
+          path="/auth/login"
+          element={
+            <PublicAuthRoute>
+              <Login />
+            </PublicAuthRoute>
+          }
+        />
+        <Route
+          path="/auth/forgot-password"
+          element={
+            <PublicAuthRoute>
+              <ForgotPassword />
+            </PublicAuthRoute>
+          }
+        />
 
         {/* Dedicated Full-Screen Chat Application Workspace (No HRMS Sidebar) */}
         <Route

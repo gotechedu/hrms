@@ -1,7 +1,7 @@
 let rawBaseUrl = (
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||
-  'http://localhost:5000/api'
+  'https://api.gotechedu.com/api'
 ).trim().replace(/\/+$/, '');
 
 // Fix https://localhost or https://127.0.0.1 to prevent ERR_SSL_PROTOCOL_ERROR in local dev
@@ -37,27 +37,26 @@ export const baseRequest = async (endpoint, options = {}) => {
     config.body = JSON.stringify(options.body);
   }
 
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json().catch(() => ({}));
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      // Auto-purge session if unauthorized / token expired
-      if (response.status === 401) {
-        localStorage.removeItem('gotech_hrms_token');
-        localStorage.removeItem('gotech_hrms_user');
+  if (!response.ok) {
+    // Auto-purge session if unauthorized / token expired
+    if (response.status === 401) {
+      localStorage.removeItem('gotech_hrms_token');
+      localStorage.removeItem('gotech_hrms_user');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gotech_unauthorized'));
       }
-
-      const error = new Error(data.message || `Request failed with status ${response.status}`);
-      error.status = response.status;
-      error.data = data;
-      throw error;
     }
 
-    return data;
-  } catch (err) {
-    throw err;
+    const error = new Error(data.message || `Request failed with status ${response.status}`);
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
+
+  return data;
 };
 
 export const baseApi = {

@@ -6,7 +6,7 @@ import { useLocation } from "react-router-dom";
  */
 function getRouteTitle(pathname) {
   if (pathname === "/" || pathname === "/auth/login") {
-    return "GoTechEdu Portal | Sign In";
+    return "GoTechEdu Portal | Login";
   }
   if (pathname === "/auth/forgot-password") {
     return "GoTechEdu Portal | Reset Password";
@@ -71,33 +71,84 @@ function getRouteTitle(pathname) {
   if (pathname.startsWith("/recycle-bin")) {
     return "GoTechEdu Portal | Recycle Bin";
   }
-  return "GoTechEdu Portal | Sign In";
+  return "GoTechEdu Portal | Login";
+}
+
+const PUBLIC_LOGIN_DESCRIPTION =
+  "Official GoTechEdu Portal login for secure access to GoTechEdu’s HRMS, employee services, learning and training resources, career opportunities, and business management tools.";
+
+function setMetaTag(attributeName, attributeValue, content) {
+  let meta = document.querySelector(`meta[${attributeName}="${attributeValue}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attributeName, attributeValue);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", content);
 }
 
 /**
- * SeoManager dynamically manages document title and enforces
- * noindex, nofollow directives across all application routes.
+ * SeoManager dynamically manages document title, search engine directives,
+ * Open Graph, Twitter metadata, and canonical links.
+ *
+ * Public login / root: index, follow with canonical https://portal.gotechedu.com/
+ * Protected / internal pages: noindex, nofollow to safeguard private enterprise data.
  */
 export default function SeoManager() {
   const location = useLocation();
 
   useEffect(() => {
-    // 1. Dynamic Page Title
-    document.title = getRouteTitle(location.pathname);
+    const isPublicLogin =
+      location.pathname === "/" || location.pathname === "/auth/login";
 
-    // 2. Strict noindex, nofollow on all routes
+    // 1. Document Title
+    const title = getRouteTitle(location.pathname);
+    document.title = title;
+
+    // 2. Robots Directive
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
       robotsMeta = document.createElement("meta");
       robotsMeta.setAttribute("name", "robots");
       document.head.appendChild(robotsMeta);
     }
-    robotsMeta.setAttribute("content", "noindex, nofollow");
 
-    // 3. Remove any canonical tag to avoid claiming public indexable status
-    const canonicalLink = document.querySelector('link[rel="canonical"]');
-    if (canonicalLink) {
-      canonicalLink.remove();
+    if (isPublicLogin) {
+      robotsMeta.setAttribute("content", "index, follow");
+
+      // Canonical link for public entry
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement("link");
+        canonicalLink.setAttribute("rel", "canonical");
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute("href", "https://portal.gotechedu.com/");
+
+      // Description
+      setMetaTag("name", "description", PUBLIC_LOGIN_DESCRIPTION);
+
+      // Open Graph
+      setMetaTag("property", "og:title", title);
+      setMetaTag("property", "og:description", PUBLIC_LOGIN_DESCRIPTION);
+      setMetaTag("property", "og:url", "https://portal.gotechedu.com/");
+
+      // Twitter
+      setMetaTag("name", "twitter:title", title);
+      setMetaTag("name", "twitter:description", PUBLIC_LOGIN_DESCRIPTION);
+    } else {
+      // Private / Protected / Internal routes must never be indexed
+      robotsMeta.setAttribute("content", "noindex, nofollow");
+
+      // Remove canonical tag on internal/private routes
+      const canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (canonicalLink) {
+        canonicalLink.remove();
+      }
+
+      // Update Open Graph and Twitter titles for internal context
+      setMetaTag("property", "og:title", title);
+      setMetaTag("name", "twitter:title", title);
     }
   }, [location.pathname]);
 

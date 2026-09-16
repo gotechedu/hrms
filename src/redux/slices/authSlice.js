@@ -7,7 +7,7 @@ let storedUser = null;
 try {
   const rawUser = localStorage.getItem('gotech_hrms_user');
   if (rawUser) storedUser = JSON.parse(rawUser);
-} catch (e) {
+} catch {
   storedUser = null;
 }
 
@@ -176,6 +176,8 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
+        localStorage.removeItem('gotech_hrms_token');
+        localStorage.removeItem('gotech_hrms_user');
         state.token = null;
         state.user = null;
         state.isAuthenticated = false;

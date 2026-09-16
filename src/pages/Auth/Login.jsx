@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Eye,
@@ -8,7 +8,6 @@ import {
   Mail,
   ArrowRight,
   AlertCircle,
-  Sparkles,
   ShieldCheck,
 } from "lucide-react";
 import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
@@ -18,17 +17,21 @@ export default function Login() {
   const dispatch = useDispatch();
   const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,14 +47,6 @@ export default function Login() {
     if (loginUser.fulfilled.match(result)) {
       navigate("/dashboard");
     }
-  };
-
-  const handleQuickFill = (item) => {
-    setFormData({
-      email: item.email,
-      password: item.password,
-    });
-    dispatch(clearAuthError());
   };
 
   return (
@@ -186,6 +181,14 @@ export default function Login() {
         <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
           <ShieldCheck size={14} className="text-emerald-500" />
           <span>Encrypted Gateway • Automatic RBAC Role Determination</span>
+        </div>
+
+        {/* Portal Overview & Accessibility */}
+        <div className="mt-6 text-center text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          <p className="font-semibold text-slate-700">Official GoTechEdu Portal</p>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Secure access to GoTechEdu’s HRMS, employee services, learning and training resources, career opportunities, and business management tools.
+          </p>
         </div>
       </div>
     </div>
