@@ -21,12 +21,17 @@ import {
 } from "../../redux/slices/projectSlice";
 import { employeeApi } from "../../Service/employeeApi";
 import Modal from "../../Components/Common/Modal";
+import usePermissions from "../../utils/usePermissions";
 
 export default function Projects() {
   const dispatch = useDispatch();
   const { projects, filterStatus, loading } = useSelector(
     (state) => state.projects,
   );
+  const { hasPermission, can, isSuperAdmin } = usePermissions();
+  const canAddProject = isSuperAdmin || can('create', 'project') || hasPermission('manage_project') || hasPermission('add_project');
+  const canEditProject = isSuperAdmin || can('edit', 'project') || hasPermission('manage_project') || hasPermission('edit_project') || hasPermission('edit_projects');
+  const canDeleteProject = isSuperAdmin || can('delete', 'project') || hasPermission('manage_project');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,10 +46,10 @@ export default function Projects() {
     category: "Full-Stack Web & Mobile",
     lead: "",
     leadName: "",
-    budget: "₹35,00,000",
+    budget: "",
     startDate: "",
     deadline: "",
-    tagsInput: "React, Node.js, PostgreSQL",
+    tagsInput: "",
     description: "",
   });
 
@@ -113,10 +118,10 @@ export default function Projects() {
         category: "Full-Stack Web & Mobile",
         lead: "",
         leadName: "",
-        budget: "₹35,00,000",
+        budget: "",
         startDate: "",
         deadline: "",
-        tagsInput: "React, Node.js, PostgreSQL",
+        tagsInput: "",
         description: "",
       });
     } catch (err) {
@@ -163,14 +168,16 @@ export default function Projects() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/25 transition hover:opacity-95 active:scale-95"
-        >
-          <Plus size={16} />
-          <span>New Project</span>
-        </button>
+        {canAddProject && (
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/25 transition hover:opacity-95 active:scale-95 cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>New Project</span>
+          </button>
+        )}
       </div>
 
       {/* Filter and Search controls */}
@@ -209,11 +216,21 @@ export default function Projects() {
 
       {/* Projects Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <Loader2 size={32} className="animate-spin text-blue-600 mb-3" />
-          <p className="text-xs font-medium">
-            Fetching portfolio deliverables from backend...
-          </p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xs animate-pulse space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-3.5 w-20 bg-slate-200 rounded" />
+                <div className="h-5 w-24 bg-slate-200 rounded-full" />
+              </div>
+              <div className="h-5 w-48 bg-slate-300 rounded" />
+              <div className="h-3.5 w-32 bg-slate-100 rounded" />
+              <div className="h-16 rounded-2xl bg-slate-50 p-4 border border-slate-100" />
+            </div>
+          ))}
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center">
@@ -253,13 +270,16 @@ export default function Projects() {
                       >
                         {proj.status}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(proj._id || proj.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canDeleteProject && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(proj._id || proj.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition cursor-pointer"
+                          title="Delete Project"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -331,7 +351,7 @@ export default function Projects() {
                     </strong>
                   </span>
 
-                  {!isDone && (
+                  {!isDone && canEditProject && (
                     <button
                       type="button"
                       onClick={() =>
@@ -340,7 +360,7 @@ export default function Projects() {
                           proj.progress,
                         )
                       }
-                      className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition"
+                      className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-200 border border-slate-200 transition cursor-pointer"
                     >
                       +5% Progress
                     </button>

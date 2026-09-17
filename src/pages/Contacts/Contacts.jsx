@@ -26,6 +26,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { contactApi } from "../../Service";
+import { usePermissions } from "../../utils/usePermissions";
 import toast from "react-hot-toast";
 
 const STATUS_CONFIG = {
@@ -98,8 +99,25 @@ export default function Contacts() {
     note: "",
   });
 
-  const userRole = (user?.role || "").toLowerCase();
-  const canManage = ["superadmin", "admin", "hr", "manager"].includes(userRole);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = (role || user?.role || "").toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission("manage_contacts") ||
+    hasPermission("manage_contact") ||
+    hasPermission("contacts") ||
+    can("manage", "contacts") ||
+    can("edit", "contacts");
+  const canCreate =
+    isSuperAdmin ||
+    hasPermission("manage_contacts") ||
+    hasPermission("create_contact") ||
+    can("create", "contacts");
+  const canDelete =
+    isSuperAdmin ||
+    hasPermission("manage_contacts") ||
+    hasPermission("delete_contact") ||
+    can("delete", "contacts");
 
   const fetchStats = async () => {
     try {

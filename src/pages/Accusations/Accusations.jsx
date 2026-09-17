@@ -32,6 +32,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { policyApi, grievanceApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 import Modal from '../../Components/Common/Modal';
 
 const categories = [
@@ -125,10 +126,16 @@ export default function Accusations() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const userRole = (user?.role || 'Employee').toLowerCase();
-  const isAdminOrHr = ['admin', 'superadmin', 'hr', 'ethics', 'manager'].some((r) =>
-    userRole.includes(r)
-  );
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = (role || user?.role || 'Employee').toLowerCase();
+  const isAdminOrHr =
+    isSuperAdmin ||
+    hasPermission('manage_accusations') ||
+    hasPermission('manage_grievance') ||
+    hasPermission('grievances') ||
+    hasPermission('accusations') ||
+    can('manage', 'grievances') ||
+    can('manage', 'accusations');
 
   // Fetch Policies
   const fetchPolicies = async () => {

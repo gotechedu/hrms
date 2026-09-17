@@ -36,6 +36,7 @@ import {
   clearActiveDiscussion,
 } from '../../redux/slices/discussionSlice';
 import Modal from '../../Components/Common/Modal';
+import { usePermissions } from '../../utils/usePermissions';
 
 const CATEGORIES = [
   'All',
@@ -99,13 +100,13 @@ export default function Discussions() {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [submittingPost, setSubmittingPost] = useState(false);
 
-  const role = (user?.role || '').toLowerCase();
+  const { hasPermission, can, isSuperAdmin, role: userRole } = usePermissions();
   const isSuperadminOrHr =
-    role === 'superadmin' ||
-    role === 'admin' ||
-    role === 'hr' ||
-    user?.role === 'System Administrator' ||
-    user?.role === 'HR Administrator';
+    isSuperAdmin ||
+    hasPermission('manage_discussions') ||
+    hasPermission('discussions') ||
+    can('manage', 'discussions') ||
+    can('delete', 'discussions');
 
   useEffect(() => {
     dispatch(fetchDiscussions({ category: selectedCategory, status: selectedStatus, search: searchTerm }));

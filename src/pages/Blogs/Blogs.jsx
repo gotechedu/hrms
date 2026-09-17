@@ -17,9 +17,11 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { blogApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function Blogs() {
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,8 +30,15 @@ export default function Blogs() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState(null);
 
-  const userRole = (user?.role || '').toLowerCase();
-  const canManage = ['superadmin', 'admin', 'hr', 'manager', 'teamlead', 'employee'].includes(userRole);
+  const userRole = (role || user?.role || '').toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission('manage_blogs') ||
+    hasPermission('manage_blog') ||
+    hasPermission('blogs') ||
+    hasPermission('create_blog') ||
+    can('manage', 'blogs') ||
+    can('create', 'blogs');
 
   const initialForm = {
     title: '',

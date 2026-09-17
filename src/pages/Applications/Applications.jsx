@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { applicationApi, courseApi, jobApi } from "../../Service";
+import { usePermissions } from "../../utils/usePermissions";
 
 export default function Applications() {
   const { user } = useSelector((state) => state.auth);
@@ -86,8 +87,16 @@ export default function Applications() {
   const [courseForm, setCourseForm] = useState(initialCourseForm);
   const [appCourseModalTab, setAppCourseModalTab] = useState(1);
 
-  const userRole = (user?.role || "").toLowerCase();
-  const canManage = ["superadmin", "admin", "hr", "manager"].includes(userRole);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = (role || user?.role || "").toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission("manage_applications") ||
+    hasPermission("manage_career") ||
+    hasPermission("manage_learninghub") ||
+    hasPermission("careerpost") ||
+    can("manage", "applications") ||
+    can("edit", "applications");
 
   const fetchJobApps = async () => {
     try {

@@ -19,6 +19,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { recycleBinApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 const ENTITY_FILTERS = [
   { id: 'All', label: 'All Deleted Items', icon: Layers },
@@ -32,6 +33,21 @@ const ENTITY_FILTERS = [
 ];
 
 export default function RecycleBin() {
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+
+  const canRestore =
+    isSuperAdmin ||
+    hasPermission('manage_recycle_bin') ||
+    hasPermission('restore_recycle_bin') ||
+    can('restore', 'recycle_bin') ||
+    can('edit', 'recycle_bin');
+
+  const canPurge =
+    isSuperAdmin ||
+    hasPermission('manage_recycle_bin') ||
+    hasPermission('delete_recycle_bin') ||
+    can('delete', 'recycle_bin');
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState('All');
@@ -136,7 +152,7 @@ export default function RecycleBin() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {items.length > 0 && (
+            {items.length > 0 && canPurge && (
               <button
                 onClick={handleEmptyBin}
                 className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 transition cursor-pointer"
@@ -264,20 +280,24 @@ export default function RecycleBin() {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleRestore(row.entityType, row._id, row.title)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
-                        >
-                          <RotateCcw size={13} />
-                          Restore
-                        </button>
-                        <button
-                          onClick={() => handlePermanentDelete(row.entityType, row._id, row.title)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs cursor-pointer"
-                        >
-                          <Trash2 size={13} />
-                          Purge
-                        </button>
+                        {canRestore && (
+                          <button
+                            onClick={() => handleRestore(row.entityType, row._id, row.title)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
+                          >
+                            <RotateCcw size={13} />
+                            Restore
+                          </button>
+                        )}
+                        {canPurge && (
+                          <button
+                            onClick={() => handlePermanentDelete(row.entityType, row._id, row.title)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                            Purge
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

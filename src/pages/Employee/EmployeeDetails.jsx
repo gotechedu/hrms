@@ -24,12 +24,14 @@ import {
 } from 'lucide-react';
 import { employeeApi } from '../../Service';
 import { updateExistingEmployee } from '../../redux/slices/employeeSlice';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function EmployeeDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,8 +39,13 @@ export default function EmployeeDetails() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
 
-  const userRole = (user?.role || '').toLowerCase();
-  const canEdit = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
+  const userRole = (role || user?.role || '').toLowerCase();
+  const canEdit =
+    isSuperAdmin ||
+    hasPermission('manage_employee') ||
+    hasPermission('edit_employee') ||
+    can('edit', 'employee') ||
+    can('manage', 'employee');
 
   const fetchEmployeeData = async () => {
     try {

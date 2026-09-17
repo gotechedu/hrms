@@ -9,6 +9,7 @@ import SeoManager from './Components/Common/SeoManager';
 
 // Layout
 import MainLayout from './Components/Layout/MainLayout';
+import PermissionRoute from './Components/Common/PermissionRoute';
 
 // Auth Pages
 import Login from './pages/Auth/Login';
@@ -187,33 +188,33 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/employees" element={<Employee />} />
-          <Route path="/employees/:id" element={<EmployeeDetails />} />
-          <Route path="/attendance" element={<Attandance />} />
-          <Route path="/timesheets" element={<TimeSheets />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/holidays" element={<Holiday />} />
+          <Route path="/employees" element={<PermissionRoute permission={['view_employee', 'manage_employee', 'create_employee']}><Employee /></PermissionRoute>} />
+          <Route path="/employees/:id" element={<PermissionRoute permission={['view_employee', 'manage_employee', 'create_employee']}><EmployeeDetails /></PermissionRoute>} />
+          <Route path="/attendance" element={<PermissionRoute permission={['add_attendance', 'view_attendance', 'manage_attendance', 'manage_attandance']}><Attandance /></PermissionRoute>} />
+          <Route path="/timesheets" element={<PermissionRoute permission={['add_timesheet', 'view_timesheet', 'manage_timesheet']}><TimeSheets /></PermissionRoute>} />
+          <Route path="/projects" element={<PermissionRoute permission={['view_project', 'manage_project', 'create_project', 'add_project']}><Projects /></PermissionRoute>} />
+          <Route path="/tasks" element={<PermissionRoute permission={['view_task', 'manage_task', 'add_task']}><Tasks /></PermissionRoute>} />
+          <Route path="/holidays" element={<PermissionRoute permission={['view_holiday', 'manage_holiday', 'add_holiday']}><Holiday /></PermissionRoute>} />
           
           {/* Payroll Routes */}
-          <Route path="/payroll" element={<PayRol />} />
-          <Route path="/payroll/org-employees" element={<OrgEmployeePayRol />} />
-          <Route path="/payroll/students" element={<StudenPayRol />} />
-          <Route path="/payroll/it-solutions" element={<ItSolutionPayRol />} />
+          <Route path="/payroll" element={<PermissionRoute permission={['view_payroll', 'manage_payroll']}><PayRol /></PermissionRoute>} />
+          <Route path="/payroll/org-employees" element={<PermissionRoute permission={['view_payroll', 'manage_payroll']}><OrgEmployeePayRol /></PermissionRoute>} />
+          <Route path="/payroll/students" element={<PermissionRoute permission={['view_payroll', 'manage_payroll']}><StudenPayRol /></PermissionRoute>} />
+          <Route path="/payroll/it-solutions" element={<PermissionRoute permission={['view_payroll', 'manage_payroll']}><ItSolutionPayRol /></PermissionRoute>} />
 
           {/* Learning & Career */}
-          <Route path="/learninghub" element={<LearningHub />} />
-          <Route path="/learninghub/batches" element={<BatchManager />} />
-          <Route path="/learninghub/trainer" element={<TrainerHub />} />
-          <Route path="/learninghub/trainee" element={<TraineeLearningHub />} />
+          <Route path="/learninghub" element={<PermissionRoute permission={['view_learninghub', 'manage_learninghub', 'access_enrolled_content']}><LearningHub /></PermissionRoute>} />
+          <Route path="/learninghub/batches" element={<PermissionRoute permission={['manage_batches', 'manage_learninghub']}><BatchManager /></PermissionRoute>} />
+          <Route path="/learninghub/trainer" element={<PermissionRoute permission={['manage_learninghub', 'manage_classes', 'grade_submissions']}><TrainerHub /></PermissionRoute>} />
+          <Route path="/learninghub/trainee" element={<PermissionRoute permission={['access_enrolled_content', 'submit_assignments', 'take_assessments', 'view_learninghub']}><TraineeLearningHub /></PermissionRoute>} />
           <Route path="/learninghub/:id" element={<CourseDetails />} />
-          <Route path="/careerpost" element={<CareerPost />} />
+          <Route path="/careerpost" element={<PermissionRoute permission={['view_career', 'manage_career']}><CareerPost /></PermissionRoute>} />
           <Route path="/careerpost/:id" element={<JobDetails />} />
-          <Route path="/applications" element={<Applications />} />
-          <Route path="/applications/:id" element={<ApplicationDetails />} />
+          <Route path="/applications" element={<PermissionRoute permission={['manage_applications', 'manage_career']}><Applications /></PermissionRoute>} />
+          <Route path="/applications/:id" element={<PermissionRoute permission={['manage_applications', 'manage_career']}><ApplicationDetails /></PermissionRoute>} />
 
           {/* Client Consultations & Leads */}
-          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts" element={<PermissionRoute permission={['manage_contacts', 'manage_contact', 'view_contacts']}><Contacts /></PermissionRoute>} />
 
           {/* Communication & Policy */}
           <Route path="/discussions" element={<Discussions />} />
@@ -222,12 +223,12 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
 
           {/* Administration & Settings */}
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/settings/roles" element={<ManageRole />} />
-          <Route path="/settings/permissions" element={<ManagePermission />} />
+          <Route path="/settings" element={<PermissionRoute permission={['manage_settings', 'settings', 'manage_roles', 'manage_permissions']}><Settings /></PermissionRoute>} />
+          <Route path="/settings/roles" element={<PermissionRoute permission={['manage_roles', 'roles_permissions']}><ManageRole /></PermissionRoute>} />
+          <Route path="/settings/permissions" element={<PermissionRoute permission={['manage_permissions', 'roles_permissions']}><ManagePermission /></PermissionRoute>} />
           
           {/* Universal Recycle Bin */}
-          <Route path="/recycle-bin" element={<RecycleBin />} />
+          <Route path="/recycle-bin" element={<PermissionRoute permission={['view_recycle_bin', 'manage_recycle_bin']}><RecycleBin /></PermissionRoute>} />
         </Route>
 
         {/* Fallback Catch-All */}

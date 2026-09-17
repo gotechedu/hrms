@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -19,6 +19,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   LogOut,
   Building2,
@@ -34,6 +35,8 @@ import {
 } from "../../redux/slices/uiSlice";
 import { logoutUser, fetchCurrentUser } from "../../redux/slices/authSlice";
 
+import usePermissions from "../../utils/usePermissions";
+
 export default function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
@@ -41,6 +44,35 @@ export default function Sidebar() {
     (state) => state.ui,
   );
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, isSuperAdmin, role } = usePermissions();
+
+  // Collapsible section state with localStorage persistence
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+    try {
+      const saved = localStorage.getItem("hrms_sidebar_collapsed_sections");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = (groupName) => {
+    setCollapsedSections((prev) => {
+      const updated = {
+        ...prev,
+        [groupName]: !prev[groupName],
+      };
+      try {
+        localStorage.setItem(
+          "hrms_sidebar_collapsed_sections",
+          JSON.stringify(updated)
+        );
+      } catch {
+        // ignore storage errors
+      }
+      return updated;
+    });
+  };
 
   // Live Auto-Refresh: Listen for matrix & role updates
   useEffect(() => {
@@ -63,17 +95,11 @@ export default function Sidebar() {
     };
   }, [dispatch]);
 
-  const role = (user?.role || "employee").toLowerCase();
-  const isSuperadmin = role === "superadmin";
-  const permissions = user?.permissions || [];
-
-  const hasPermission = (permissionKeys) => {
-    if (isSuperadmin) return true;
-    if (!permissionKeys) return true;
-    const keys = Array.isArray(permissionKeys)
-      ? permissionKeys
-      : [permissionKeys];
-    return keys.some((k) => permissions.includes(k));
+  const checkItemPermission = (item) => {
+    if (isSuperAdmin) return true;
+    if (!item.permission) return true;
+    const keys = Array.isArray(item.permission) ? item.permission : [item.permission];
+    return keys.some((k) => hasPermission(k));
   };
 
   let rawNavSections = [];
@@ -92,11 +118,6 @@ export default function Sidebar() {
             name: 'Live Lectures',
             path: '/learninghub',
             icon: Clock,
-          },
-          {
-            name: 'Assignments',
-            path: '/learninghub',
-            icon: CheckSquare,
           },
         ],
       },
@@ -139,8 +160,20 @@ export default function Sidebar() {
         ],
       },
       {
-        group: 'Workspace',
+        group: 'Operations',
         items: [
+          {
+            name: 'Attendance & Leaves',
+            path: '/attendance',
+            icon: Clock,
+            permission: ['manage_attandance', 'manage_attendance', 'add_attendance', 'view_attendance'],
+          },
+          {
+            name: 'Task Board',
+            path: '/tasks',
+            icon: CheckSquare,
+            permission: ['manage_task', 'view_task'],
+          },
           {
             name: 'Team Discussions',
             path: '/discussions',
@@ -163,13 +196,13 @@ export default function Sidebar() {
             name: 'Dashboard',
             path: '/dashboard',
             icon: LayoutDashboard,
-            permission: ['manage_dashboard'],
+            permission: null,
           },
           {
             name: 'Employee Directory',
             path: '/employees',
             icon: Users,
-            permission: ['manage_employee'],
+            permission: ['manage_employee', 'view_employee', 'create_employee'],
           },
         ],
       },
@@ -180,33 +213,31 @@ export default function Sidebar() {
             name: 'Attendance & Leaves',
             path: '/attendance',
             icon: Clock,
-            permission: ['manage_attandance', 'manage_attendance'],
+            permission: ['manage_attandance', 'manage_attendance', 'add_attendance', 'view_attendance'],
           },
           {
             name: 'Timesheets',
             path: '/timesheets',
             icon: FileSpreadsheet,
-            permission: ['manage_timesheet'],
+            permission: ['manage_timesheet', 'view_timesheet', 'add_timesheet'],
           },
           {
             name: 'Projects',
             path: '/projects',
             icon: FolderKanban,
-            badge: '',
-            permission: ['manage_project'],
+            permission: ['manage_project', 'view_project', 'create_project', 'add_project'],
           },
           {
             name: 'Task Board',
             path: '/tasks',
             icon: CheckSquare,
-            badge: '',
-            permission: ['manage_task'],
+            permission: ['manage_task', 'view_task', 'add_task'],
           },
           {
             name: 'Holiday Calendar',
             path: '/holidays',
             icon: CalendarDays,
-            permission: ['manage_holiday'],
+            permission: ['manage_holiday', 'view_holiday'],
           },
           {
             name: 'Team Discussions',
@@ -217,37 +248,66 @@ export default function Sidebar() {
         ],
       },
       {
+        group: 'Finance & Payroll',
+        items: [
+          {
+            name: 'Payroll Dashboard',
+            path: '/payroll',
+            icon: DollarSign,
+            permission: ['manage_payroll', 'view_payroll'],
+          },
+          {
+            name: 'Employee Payroll',
+            path: '/payroll/org-employees',
+            icon: Users,
+            permission: ['manage_payroll', 'view_payroll'],
+          },
+          {
+            name: 'Student Stipends',
+            path: '/payroll/students',
+            icon: GraduationCap,
+            permission: ['manage_payroll', 'view_payroll'],
+          },
+          {
+            name: 'IT Solutions Payroll',
+            path: '/payroll/it-solutions',
+            icon: Building2,
+            permission: ['manage_payroll', 'view_payroll'],
+          },
+        ],
+      },
+      {
         group: 'Talent & Growth',
         items: [
           {
             name: 'Learning Hub',
             path: '/learninghub',
             icon: GraduationCap,
-            permission: ['manage_learninghub'],
+            permission: ['manage_learninghub', 'view_learninghub'],
           },
           {
             name: 'Cohort Batches',
             path: '/learninghub/batches',
             icon: Users,
-            permission: ['manage_learninghub'],
+            permission: ['manage_learninghub', 'manage_batches'],
           },
           {
             name: 'Career Postings',
             path: '/careerpost',
             icon: Briefcase,
-            permission: ['manage_career'],
+            permission: ['manage_career', 'view_career'],
           },
           {
             name: 'Applications',
             path: '/applications',
             icon: UserCheck,
-            permission: ['manage_career'],
+            permission: ['manage_career', 'manage_applications'],
           },
           {
             name: 'Client Inquiries',
             path: '/contacts',
             icon: MessageSquare,
-            permission: ['manage_contacts', 'manage_career', 'manage_dashboard'],
+            permission: ['manage_contacts', 'manage_contact', 'view_contacts'],
           },
           {
             name: 'Grievances & Policy',
@@ -259,7 +319,7 @@ export default function Sidebar() {
             name: 'Company Bulletins',
             path: '/blogs',
             icon: Newspaper,
-            permission: ['manage_blogs'],
+            permission: ['manage_blogs', 'view_blogs'],
           },
         ],
       },
@@ -270,13 +330,25 @@ export default function Sidebar() {
             name: 'System Settings',
             path: '/settings',
             icon: Settings,
-            permission: ['manage_settings', 'settings', 'roles_permissions'],
+            permission: ['manage_settings', 'settings'],
+          },
+          {
+            name: 'Roles & Privileges',
+            path: '/settings/roles',
+            icon: Shield,
+            permission: ['manage_roles', 'roles_permissions'],
+          },
+          {
+            name: 'Permission Matrix',
+            path: '/settings/permissions',
+            icon: Sliders,
+            permission: ['manage_permissions', 'roles_permissions'],
           },
           {
             name: 'Recycle Bin',
             path: '/recycle-bin',
             icon: Trash2,
-            permission: ['manage_recycle_bin', 'recycle_bin'],
+            permission: ['manage_recycle_bin', 'recycle_bin', 'view_recycle_bin'],
           },
         ],
       },
@@ -286,7 +358,7 @@ export default function Sidebar() {
   const navSections = rawNavSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => hasPermission(item.permission)),
+      items: section.items.filter((item) => checkItemPermission(item)),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -358,71 +430,115 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation List */}
-        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
-          {navSections.map((section, idx) => (
-            <div key={idx}>
-              {!sidebarCollapsed && (
-                <p className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  {section.group}
-                </p>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive =
-                    item.path === "/dashboard"
-                      ? location.pathname === "/dashboard"
-                      : location.pathname.startsWith(item.path);
+        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-4">
+          {navSections.map((section, idx) => {
+            const isCollapsed =
+              !sidebarCollapsed && Boolean(collapsedSections[section.group]);
+            const isSectionActive = section.items.some((item) =>
+              item.path === "/dashboard"
+                ? location.pathname === "/dashboard"
+                : location.pathname.startsWith(item.path)
+            );
 
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      onClick={handleNavClick}
-                      title={sidebarCollapsed ? item.name : undefined}
-                      className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-150 ${
-                        isActive
-                          ? "bg-blue-50/90 text-blue-700 font-bold shadow-2xs"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <div
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center transition-transform group-hover:scale-110 ${
-                          isActive
-                            ? "text-blue-600"
-                            : "text-slate-400 group-hover:text-slate-600"
+            return (
+              <div key={section.group || idx} className="space-y-1">
+                {!sidebarCollapsed ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.group)}
+                    aria-expanded={!isCollapsed}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700 hover:bg-slate-100/70 transition-all cursor-pointer select-none group/sec"
+                  >
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <span className="truncate">{section.group}</span>
+                      {isSectionActive && isCollapsed && (
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600 animate-pulse"
+                          title="Active page inside"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 text-slate-400 group-hover/sec:text-slate-600">
+                      {isCollapsed && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                          {section.items.length}
+                        </span>
+                      )}
+                      <ChevronDown
+                        size={13}
+                        className={`transition-transform duration-200 ${
+                          isCollapsed
+                            ? "-rotate-90 text-slate-400"
+                            : "rotate-0 text-slate-400 group-hover/sec:text-slate-600"
                         }`}
-                      >
-                        <Icon size={18} />
-                      </div>
+                      />
+                    </div>
+                  </button>
+                ) : (
+                  <div className="h-px bg-slate-100 my-2" />
+                )}
 
-                      {!sidebarCollapsed && (
-                        <div className="flex flex-1 items-center justify-between overflow-hidden">
-                          <span className="truncate">{item.name}</span>
-                          {item.badge && (
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
-                                isActive
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
+                {/* Section Items */}
+                {(!isCollapsed || sidebarCollapsed) && (
+                  <div className="space-y-1 transition-all duration-200">
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive =
+                        item.path === "/dashboard"
+                          ? location.pathname === "/dashboard"
+                          : location.pathname.startsWith(item.path);
+
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.path}
+                          onClick={handleNavClick}
+                          title={sidebarCollapsed ? item.name : undefined}
+                          className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-150 ${
+                            isActive
+                              ? "bg-blue-50/90 text-blue-700 font-bold shadow-2xs"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center transition-transform group-hover:scale-110 ${
+                              isActive
+                                ? "text-blue-600"
+                                : "text-slate-400 group-hover:text-slate-600"
+                            }`}
+                          >
+                            <Icon size={18} />
+                          </div>
+
+                          {!sidebarCollapsed && (
+                            <div className="flex flex-1 items-center justify-between overflow-hidden">
+                              <span className="truncate">{item.name}</span>
+                              {item.badge && (
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
+                                    isActive
+                                      ? "bg-blue-600 text-white"
+                                      : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
+                                  }`}
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
                           )}
-                        </div>
-                      )}
 
-                      {/* Active Indicator Strip */}
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-blue-600" />
-                      )}
-                    </Link>
-                  );
-                })}
+                          {/* Active Indicator Strip */}
+                          {isActive && (
+                            <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-blue-600" />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* User Footer Card */}

@@ -25,6 +25,7 @@ import {
 import { projectApi } from "../../Service/projectApi";
 import { employeeApi } from "../../Service/employeeApi";
 import Modal from "../../Components/Common/Modal";
+import usePermissions from "../../utils/usePermissions";
 
 const columns = [
   {
@@ -54,6 +55,25 @@ export default function Tasks() {
   const { tasks, viewMode, filterPriority, loading } = useSelector(
     (state) => state.tasks,
   );
+  const { hasPermission, can, isSuperAdmin, user } = usePermissions();
+  const canAddTask =
+    isSuperAdmin ||
+    can('create', 'task') ||
+    hasPermission('manage_task') ||
+    hasPermission('add_task') ||
+    hasPermission('create_tasks');
+  const canEditTask =
+    isSuperAdmin ||
+    can('edit', 'task') ||
+    hasPermission('manage_task') ||
+    hasPermission('edit_task') ||
+    hasPermission('edit_tasks');
+  const canDeleteTask =
+    isSuperAdmin ||
+    can('delete', 'task') ||
+    hasPermission('manage_task') ||
+    hasPermission('delete_task') ||
+    hasPermission('delete_tasks');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -237,14 +257,16 @@ export default function Tasks() {
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95"
-          >
-            <Plus size={16} />
-            <span>Create Task</span>
-          </button>
+          {canAddTask && (
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 active:scale-95 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Create Task</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -287,9 +309,25 @@ export default function Tasks() {
 
       {/* Kanban / List Board */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <Loader2 size={32} className="animate-spin text-blue-600 mb-3" />
-          <p className="text-xs font-medium">Fetching active sprint tasks...</p>
+        <div className="grid gap-5 lg:grid-cols-4 items-start">
+          {columns.map((col) => (
+            <div
+              key={col.id}
+              className="rounded-3xl border border-slate-200/80 bg-slate-100/60 p-4 min-h-[450px] animate-pulse space-y-3"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <div className="h-4 w-20 bg-slate-200 rounded" />
+                <div className="h-5 w-6 bg-slate-200 rounded-full" />
+              </div>
+              {[1, 2].map((k) => (
+                <div key={k} className="h-32 rounded-2xl bg-white p-4 shadow-2xs border border-slate-200/60 space-y-2">
+                  <div className="h-3 w-16 bg-slate-100 rounded" />
+                  <div className="h-4 w-32 bg-slate-200 rounded" />
+                  <div className="h-3 w-24 bg-slate-100 rounded mt-4" />
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       ) : viewMode === "kanban" ? (
         <div className="grid gap-5 lg:grid-cols-4 items-start">
@@ -333,13 +371,16 @@ export default function Tasks() {
                             >
                               {task.priority}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(task._id || task.id)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition"
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                            {canDeleteTask && (
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(task._id || task.id)}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition cursor-pointer"
+                                title="Delete task"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -368,7 +409,7 @@ export default function Tasks() {
                           </span>
                         </div>
 
-                        {task.status !== "Done" && (
+                        {task.status !== "Done" && (canEditTask || task.assignee === user?.name) && (
                           <button
                             type="button"
                             onClick={() =>
@@ -377,7 +418,7 @@ export default function Tasks() {
                                 task.status,
                               )
                             }
-                            className="mt-2.5 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-slate-50 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 border border-slate-200/80 transition"
+                            className="mt-2.5 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-slate-50 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 border border-slate-200/80 transition cursor-pointer"
                           >
                             <span>Advance to {getNextStatus(task.status)}</span>
                             <MoveRight size={11} />
@@ -445,13 +486,16 @@ export default function Tasks() {
                       </span>
                     </td>
                     <td className="py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(t._id || t.id)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canDeleteTask && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(t._id || t.id)}
+                          className="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          title="Delete task"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

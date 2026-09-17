@@ -18,9 +18,9 @@ import {
   addHolidayAsync,
   updateHolidayAsync,
   deleteHolidayAsync,
-  setSelectedYear,
 } from '../../redux/slices/holidaySlice';
 import Modal from '../../Components/Common/Modal';
+import usePermissions from '../../utils/usePermissions';
 
 export default function Holiday() {
   const dispatch = useDispatch();
@@ -43,18 +43,14 @@ export default function Holiday() {
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Role and permission check
-  const userRole = (user?.role || '').toLowerCase();
-  const permissions = user?.permissions || [];
+  // Dynamic Role and permission check
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = role || (user?.role || '').toLowerCase();
   const canManage =
-    userRole === 'admin' ||
-    userRole === 'superadmin' ||
-    userRole === 'hr' ||
-    userRole === 'manager' ||
-    user?.role === 'HR Administrator' ||
-    user?.role === 'System Administrator' ||
-    user?.role === 'CEO / Executive' ||
-    permissions.includes('manage_holiday');
+    isSuperAdmin ||
+    hasPermission('manage_holiday') ||
+    hasPermission('add_holiday') ||
+    can('create', 'holiday');
 
   useEffect(() => {
     dispatch(fetchHolidays({ year: selectedYear, type: selectedType, search: searchTerm }));

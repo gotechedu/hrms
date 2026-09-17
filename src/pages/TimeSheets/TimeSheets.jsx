@@ -21,19 +21,25 @@ import {
   Users,
 } from 'lucide-react';
 import { timesheetApi } from '../../Service';
+import { projectApi } from '../../Service/projectApi';
 import notify from '../../utils/toast';
+
+import usePermissions from '../../utils/usePermissions';
 
 export default function TimeSheets() {
   const { user } = useSelector((state) => state.auth);
-
-  // Role permissions
-  const userRole = (user?.role || 'employee').toLowerCase();
-  const permissions = user?.permissions || [];
-  const isSuperadmin = userRole === 'superadmin';
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = role || (user?.role || 'employee').toLowerCase();
   const canManageTimesheets =
-    isSuperadmin ||
-    permissions.includes('projects') ||
-    ['admin', 'hr', 'manager', 'teamlead'].includes(userRole);
+    isSuperAdmin ||
+    hasPermission('manage_timesheet') ||
+    can('manage', 'timesheet');
+  const canCreateTimesheet =
+    isSuperAdmin ||
+    hasPermission('manage_timesheet') ||
+    hasPermission('timesheet') ||
+    hasPermission('add_timesheet') ||
+    can('create', 'timesheet');
 
   const [activeTab, setActiveTab] = useState('my'); // 'my' | 'roster'
   const [loading, setLoading] = useState(true);
@@ -62,10 +68,12 @@ export default function TimeSheets() {
     return monday.toISOString().split('T')[0];
   };
 
+  const [availableProjects, setAvailableProjects] = useState([]);
+
   const initialForm = {
     weekStartDate: getCurrentMonday(),
-    project: 'Enterprise School ERP & SIS',
-    client: 'St. Xavier Academy',
+    project: '',
+    client: '',
     taskCategory: 'Development',
     dailyHours: { mon: 8, tue: 8, wed: 8, thu: 8, fri: 8, sat: 0, sun: 0 },
     billableHours: 40,
@@ -103,11 +111,20 @@ export default function TimeSheets() {
 
   const loadAll = async () => {
     setLoading(true);
-    await fetchMyData();
-    if (canManageTimesheets) {
-      await fetchOrgData();
+    try {
+      const promises = [fetchMyData()];
+      if (canManageTimesheets) {
+        promises.push(fetchOrgData());
+      }
+      promises.push(
+        projectApi.getProjects().then((res) => {
+          setAvailableProjects(res.data || res.projects || []);
+        }).catch(() => {})
+      );
+      await Promise.allSettled(promises);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -218,18 +235,20 @@ export default function TimeSheets() {
           >
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setForm(initialForm);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Log Weekly Hours</span>
-          </button>
+          {canCreateTimesheet && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingId(null);
+                setForm(initialForm);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Log Weekly Hours</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -325,103 +344,118 @@ export default function TimeSheets() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {myTimesheets.map((item) => (
-                  <tr key={item._id || item.id} className="hover:bg-slate-50/70 transition">
-                    <td className="px-6 py-4 font-bold font-mono text-slate-900">
-                      {item.weekStartDate}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="font-bold text-slate-900">{item.project}</div>
-                      <div className="text-[11px] text-slate-400">{item.client}</div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                        {item.taskCategory}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-1 font-mono text-[11px]">
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Mon">
-                          {item.dailyHours?.mon || 0}
+                {loading ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                      <td className="px-4 py-4"><div className="h-4 w-32 bg-slate-200 rounded mb-1" /><div className="h-2.5 w-16 bg-slate-100 rounded" /></td>
+                      <td className="px-4 py-4"><div className="h-4 w-20 bg-slate-100 rounded" /></td>
+                      <td className="px-4 py-4"><div className="h-4 w-36 bg-slate-100 rounded mx-auto" /></td>
+                      <td className="px-4 py-4 text-center"><div className="h-4 w-12 bg-slate-200 rounded mx-auto" /></td>
+                      <td className="px-4 py-4 text-center"><div className="h-4 w-12 bg-slate-200 rounded mx-auto" /></td>
+                      <td className="px-4 py-4"><div className="h-5 w-16 bg-slate-100 rounded-full" /></td>
+                      <td className="px-4 py-4 text-right"><div className="h-4 w-12 bg-slate-100 rounded ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : (
+                  myTimesheets.map((item) => (
+                    <tr key={item._id || item.id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-6 py-4 font-bold font-mono text-slate-900">
+                        {item.weekStartDate}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="font-bold text-slate-900">{item.project}</div>
+                        <div className="text-[11px] text-slate-400">{item.client}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                          {item.taskCategory}
                         </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Tue">
-                          {item.dailyHours?.tue || 0}
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Wed">
-                          {item.dailyHours?.wed || 0}
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Thu">
-                          {item.dailyHours?.thu || 0}
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Fri">
-                          {item.dailyHours?.fri || 0}
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-400" title="Sat">
-                          {item.dailyHours?.sat || 0}
-                        </span>
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-400" title="Sun">
-                          {item.dailyHours?.sun || 0}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-center font-mono font-bold text-slate-900">
-                      {item.totalHours} hrs
-                    </td>
-                    <td className="px-4 py-4 text-center font-mono font-semibold text-blue-600">
-                      {item.billableHours} hrs
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
-                          item.status === 'Approved'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : item.status === 'Rejected'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      {item.status !== 'Approved' && (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingId(item._id || item.id);
-                              setForm({
-                                weekStartDate: item.weekStartDate,
-                                project: item.project,
-                                client: item.client,
-                                taskCategory: item.taskCategory,
-                                dailyHours: item.dailyHours || initialForm.dailyHours,
-                                billableHours: item.billableHours || item.totalHours,
-                                description: item.description || '',
-                                status: item.status,
-                              });
-                              setIsModalOpen(true);
-                            }}
-                            className="p-1 text-slate-400 hover:text-blue-600 transition cursor-pointer"
-                            title="Edit Timesheet"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(item._id || item.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                            title="Delete Timesheet"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-center gap-1 font-mono text-[11px]">
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Mon">
+                            {item.dailyHours?.mon || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Tue">
+                            {item.dailyHours?.tue || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Wed">
+                            {item.dailyHours?.wed || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Thu">
+                            {item.dailyHours?.thu || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold" title="Fri">
+                            {item.dailyHours?.fri || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-400" title="Sat">
+                            {item.dailyHours?.sat || 0}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-400" title="Sun">
+                            {item.dailyHours?.sun || 0}
+                          </span>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-4 text-center font-mono font-bold text-slate-900">
+                        {item.totalHours} hrs
+                      </td>
+                      <td className="px-4 py-4 text-center font-mono font-semibold text-blue-600">
+                        {item.billableHours} hrs
+                      </td>
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
+                            item.status === 'Approved'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : item.status === 'Rejected'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        {item.status !== 'Approved' && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingId(item._id || item.id);
+                                setForm({
+                                  weekStartDate: item.weekStartDate,
+                                  project: item.project,
+                                  client: item.client,
+                                  taskCategory: item.taskCategory,
+                                  dailyHours: item.dailyHours || initialForm.dailyHours,
+                                  billableHours: item.billableHours || item.totalHours,
+                                  description: item.description || '',
+                                  status: item.status,
+                                });
+                                setIsModalOpen(true);
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-600 transition cursor-pointer"
+                              title="Edit Timesheet"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(item._id || item.id)}
+                              className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                              title="Delete Timesheet"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
 
-                {myTimesheets.length === 0 && (
+                {!loading && myTimesheets.length === 0 && (
                   <tr>
                     <td colSpan={8} className="py-10 text-center text-slate-400 font-medium">
                       No timesheets logged yet. Click "Log Weekly Hours" to log your first sprint!
@@ -480,69 +514,91 @@ export default function TimeSheets() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredOrgList.map((item) => (
-                    <tr key={item._id || item.id} className="hover:bg-slate-50/70 transition">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                            {(item.employee?.name || item.user?.name || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-900">
-                              {item.employee?.name || item.user?.name}
+                  {loading ? (
+                    [1, 2, 3, 4].map((i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-slate-200" />
+                            <div className="space-y-1">
+                              <div className="h-4 w-28 bg-slate-200 rounded" />
+                              <div className="h-2.5 w-20 bg-slate-100 rounded" />
                             </div>
-                            <div className="text-[11px] font-mono text-slate-400">{item.user?.email}</div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 font-mono font-bold text-slate-900">{item.weekStartDate}</td>
-                      <td className="px-4 py-4">
-                        <div className="font-bold text-slate-900">{item.project}</div>
-                        <div className="text-[11px] text-slate-400">{item.client}</div>
-                      </td>
-                      <td className="px-4 py-4 text-center font-mono font-bold text-slate-900">
-                        {item.totalHours} hrs
-                      </td>
-                      <td className="px-4 py-4 text-center font-mono font-semibold text-blue-600">
-                        {item.billableHours} hrs
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
-                            item.status === 'Approved'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : item.status === 'Rejected'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        {item.status === 'Submitted' ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleStatusUpdate(item._id || item.id, 'Approved')}
-                              className="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleStatusUpdate(item._id || item.id, 'Rejected')}
-                              className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                            >
-                              Reject
-                            </button>
+                        </td>
+                        <td className="px-4 py-4"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-32 bg-slate-200 rounded mb-1" /><div className="h-2.5 w-16 bg-slate-100 rounded" /></td>
+                        <td className="px-4 py-4 text-center"><div className="h-4 w-12 bg-slate-200 rounded mx-auto" /></td>
+                        <td className="px-4 py-4 text-center"><div className="h-4 w-12 bg-slate-200 rounded mx-auto" /></td>
+                        <td className="px-4 py-4"><div className="h-5 w-16 bg-slate-100 rounded-full" /></td>
+                        <td className="px-4 py-4 text-right"><div className="h-6 w-24 bg-slate-200 rounded-lg ml-auto" /></td>
+                      </tr>
+                    ))
+                  ) : (
+                    filteredOrgList.map((item) => (
+                      <tr key={item._id || item.id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                              {(item.employee?.name || item.user?.name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900">
+                                {item.employee?.name || item.user?.name}
+                              </div>
+                              <div className="text-[11px] font-mono text-slate-400">{item.user?.email}</div>
+                            </div>
                           </div>
-                        ) : (
-                          <span className="text-[11px] font-mono text-slate-400">Processed</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-4 font-mono font-bold text-slate-900">{item.weekStartDate}</td>
+                        <td className="px-4 py-4">
+                          <div className="font-bold text-slate-900">{item.project}</div>
+                          <div className="text-[11px] text-slate-400">{item.client}</div>
+                        </td>
+                        <td className="px-4 py-4 text-center font-mono font-bold text-slate-900">
+                          {item.totalHours} hrs
+                        </td>
+                        <td className="px-4 py-4 text-center font-mono font-semibold text-blue-600">
+                          {item.billableHours} hrs
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
+                              item.status === 'Approved'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : item.status === 'Rejected'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          {item.status === 'Submitted' ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStatusUpdate(item._id || item.id, 'Approved')}
+                                className="rounded-lg bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStatusUpdate(item._id || item.id, 'Rejected')}
+                                className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-mono text-slate-400">Processed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
 
                   {filteredOrgList.length === 0 && (
                     <tr>
@@ -610,17 +666,33 @@ export default function TimeSheets() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Enterprise School ERP & SIS"
+                    list="timesheet-projects-list"
+                    placeholder="Type or select project..."
                     value={form.project}
-                    onChange={(e) => setForm({ ...form, project: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = availableProjects.find((p) => p.name === val);
+                      setForm({
+                        ...form,
+                        project: val,
+                        client: matched?.client || form.client,
+                      });
+                    }}
                     className="h-10 w-full rounded-xl border border-slate-200 px-3 font-medium text-slate-800 focus:border-blue-500 focus:outline-none"
                   />
+                  <datalist id="timesheet-projects-list">
+                    {availableProjects.map((p) => (
+                      <option key={p._id || p.id} value={p.name}>
+                        {p.client ? `${p.client}` : 'Project'}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Client / Account</label>
                   <input
                     type="text"
-                    placeholder="e.g. Internal GoTechEdu"
+                    placeholder="e.g. Client or internal pod"
                     value={form.client}
                     onChange={(e) => setForm({ ...form, client: e.target.value })}
                     className="h-10 w-full rounded-xl border border-slate-200 px-3 font-medium text-slate-800 focus:border-blue-500 focus:outline-none"

@@ -41,6 +41,7 @@ import {
 import Modal from '../../Components/Common/Modal';
 import { rolePermissionApi } from '../../Service';
 import notify from '../../utils/toast';
+import usePermissions from '../../utils/usePermissions';
 
 const DEFAULT_ROLES_LIST = [
   { value: 'admin', label: 'Admin (System)' },
@@ -57,6 +58,7 @@ const EMPLOYEE_STATUSES = ['Active', 'Inactive', 'On Leave', 'Probation', 'Termi
 export default function Employee() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role: currentRole } = usePermissions();
   const {
     employees,
     departments,
@@ -77,12 +79,25 @@ export default function Employee() {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
 
-  // Role permissions
-  const userRole = (user?.role || '').toLowerCase();
-  const permissions = user?.permissions || [];
-  const isSuperadmin = userRole === 'superadmin';
-  const canManageEmployees = isSuperadmin || permissions.includes('employees') || ['admin', 'hr'].includes(userRole);
-  const canEditEmployees = isSuperadmin || permissions.includes('employees') || ['admin', 'hr', 'manager'].includes(userRole);
+  // Dynamic role permissions
+  const userRole = currentRole || (user?.role || '').toLowerCase();
+  const isSuperadmin = isSuperAdmin;
+  const canManageEmployees =
+    isSuperadmin ||
+    can('create', 'employee') ||
+    hasPermission('manage_employee') ||
+    hasPermission('create_employee') ||
+    hasPermission('add_employee');
+  const canEditEmployees =
+    isSuperadmin ||
+    can('edit', 'employee') ||
+    hasPermission('manage_employee') ||
+    hasPermission('edit_employee');
+  const canDeleteEmployees =
+    isSuperadmin ||
+    can('delete', 'employee') ||
+    hasPermission('manage_employee') ||
+    hasPermission('delete_employee');
 
   // New Employee Form State
   const initialNewEmployee = {
@@ -91,12 +106,12 @@ export default function Employee() {
     phone: '',
     department: 'Engineering',
     role: 'employee',
-    designation: 'Software Engineer',
+    designation: '',
     type: 'Full-Time',
     status: 'Active',
-    salary: '₹18,00,000 PA',
-    location: 'Gurugram, HQ',
-    password: 'Password@123',
+    salary: '',
+    location: '',
+    password: '',
   };
   const [newEmployee, setNewEmployee] = useState(initialNewEmployee);
 
@@ -341,9 +356,29 @@ export default function Employee() {
 
       {/* Loading Skeleton / Empty State */}
       {loading && employees.length === 0 ? (
-        <div className="py-16 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="mt-3 text-xs text-slate-500 font-mono">Loading employee roster...</p>
+        <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 shadow-2xs">
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0 animate-pulse"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-slate-200" />
+                  <div className="space-y-1.5">
+                    <div className="h-4 w-36 bg-slate-200 rounded" />
+                    <div className="h-2.5 w-24 bg-slate-100 rounded" />
+                  </div>
+                </div>
+                <div className="h-4 w-20 bg-slate-200 rounded hidden sm:block" />
+                <div className="h-4 w-28 bg-slate-100 rounded hidden md:block" />
+                <div className="h-5 w-16 bg-slate-100 rounded-md hidden lg:block" />
+                <div className="h-5 w-16 bg-slate-100 rounded-full" />
+                <div className="h-4 w-20 bg-slate-100 rounded hidden sm:block" />
+                <div className="h-6 w-16 bg-slate-200 rounded-lg" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : employees.length === 0 ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-2xs">
@@ -459,7 +494,7 @@ export default function Employee() {
                             </button>
                           )}
 
-                          {canManageEmployees && (
+                          {canDeleteEmployees && (
                             <button
                               type="button"
                               onClick={() => handleDeleteEmployee(emp._id || emp.employeeId, emp.name)}

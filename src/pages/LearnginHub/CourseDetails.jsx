@@ -21,11 +21,13 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { courseApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
 
   const [course, setCourse] = useState(null);
   const [enrolledStudents, setEnrolledStudents] = useState([]);
@@ -34,8 +36,14 @@ export default function CourseDetails() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
 
-  const userRole = (user?.role || '').toLowerCase();
-  const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
+  const userRole = (role || user?.role || '').toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission('manage_learninghub') ||
+    hasPermission('manage_learning_hub') ||
+    hasPermission('learninghub') ||
+    can('manage', 'learninghub') ||
+    can('edit', 'learninghub');
 
   const fetchCourseData = async () => {
     try {

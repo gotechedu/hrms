@@ -31,11 +31,13 @@ import {
   Send,
 } from 'lucide-react';
 import { applicationApi, courseApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function ApplicationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
 
   const [application, setApplication] = useState(null);
   const [appType, setAppType] = useState('job'); // 'job' | 'course'
@@ -50,8 +52,15 @@ export default function ApplicationDetails() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
 
-  const userRole = (user?.role || '').toLowerCase();
-  const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
+  const userRole = (role || user?.role || '').toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission('manage_applications') ||
+    hasPermission('manage_career') ||
+    hasPermission('manage_learninghub') ||
+    hasPermission('careerpost') ||
+    can('manage', 'applications') ||
+    can('edit', 'applications');
 
   const fetchApplicationData = async () => {
     try {

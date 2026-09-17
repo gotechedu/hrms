@@ -20,9 +20,11 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { jobApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function CareerPost() {
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,8 +34,14 @@ export default function CareerPost() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
 
-  const userRole = (user?.role || '').toLowerCase();
-  const canManage = ['superadmin', 'admin', 'hr', 'manager'].includes(userRole);
+  const userRole = (role || user?.role || '').toLowerCase();
+  const canManage =
+    isSuperAdmin ||
+    hasPermission('manage_career') ||
+    hasPermission('manage_careers') ||
+    hasPermission('careerpost') ||
+    can('manage', 'careerpost') ||
+    can('create', 'careerpost');
 
   const initialForm = {
     title: '',

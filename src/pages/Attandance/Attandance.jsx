@@ -23,18 +23,17 @@ import {
 } from 'lucide-react';
 import { attendanceApi } from '../../Service';
 import notify from '../../utils/toast';
+import usePermissions from '../../utils/usePermissions';
 
 export default function Attandance() {
   const { user } = useSelector((state) => state.auth);
-
-  // Permissions & Role check
-  const userRole = (user?.role || 'employee').toLowerCase();
-  const permissions = user?.permissions || [];
-  const isSuperadmin = userRole === 'superadmin';
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+  const userRole = role || (user?.role || 'employee').toLowerCase();
   const canManageAttendance =
-    isSuperadmin ||
-    permissions.includes('attendance') ||
-    ['admin', 'hr', 'manager', 'teamlead'].includes(userRole);
+    isSuperAdmin ||
+    hasPermission('manage_attendance') ||
+    hasPermission('manage_attandance') ||
+    can('manage', 'attendance');
 
   // Active View Tab: 'my' (Personal) | 'roster' (Company-wide) | 'leaves' (Leave Requests)
   const [activeTab, setActiveTab] = useState('my');
@@ -234,6 +233,20 @@ export default function Attandance() {
     return name.includes(q) || email.includes(q) || empId.includes(q) || ip.includes(q);
   });
 
+  // Dynamic leave quotas calculated from real leave requests
+  const casualUsed = leaveRequests
+    .filter((l) => l.status === 'Approved' && l.type?.toLowerCase().includes('casual'))
+    .reduce((sum, l) => sum + (Number(l.days) || 1), 0);
+  const medicalUsed = leaveRequests
+    .filter((l) => l.status === 'Approved' && (l.type?.toLowerCase().includes('sick') || l.type?.toLowerCase().includes('medical')))
+    .reduce((sum, l) => sum + (Number(l.days) || 1), 0);
+  const privilegeUsed = leaveRequests
+    .filter((l) => l.status === 'Approved' && l.type?.toLowerCase().includes('privilege'))
+    .reduce((sum, l) => sum + (Number(l.days) || 1), 0);
+  const compUsed = leaveRequests
+    .filter((l) => l.status === 'Approved' && l.type?.toLowerCase().includes('compensatory'))
+    .reduce((sum, l) => sum + (Number(l.days) || 1), 0);
+
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
       {/* Header */}
@@ -417,23 +430,23 @@ export default function Attandance() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                     <span className="text-[11px] font-bold text-slate-500 uppercase">Casual Leave</span>
-                    <div className="mt-1 text-2xl font-black text-slate-900">9 Days</div>
-                    <span className="text-[10px] text-slate-400 font-medium">3 of 12 used this year</span>
+                    <div className="mt-1 text-2xl font-black text-slate-900">{Math.max(0, 12 - casualUsed)} Days</div>
+                    <span className="text-[10px] text-slate-400 font-medium">{casualUsed} of 12 utilized</span>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                     <span className="text-[11px] font-bold text-slate-500 uppercase">Sick & Medical</span>
-                    <div className="mt-1 text-2xl font-black text-slate-900">9 Days</div>
-                    <span className="text-[10px] text-slate-400 font-medium">1 of 10 used this year</span>
+                    <div className="mt-1 text-2xl font-black text-slate-900">{Math.max(0, 10 - medicalUsed)} Days</div>
+                    <span className="text-[10px] text-slate-400 font-medium">{medicalUsed} of 10 utilized</span>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                     <span className="text-[11px] font-bold text-slate-500 uppercase">Privilege Leave</span>
-                    <div className="mt-1 text-2xl font-black text-slate-900">11 Days</div>
-                    <span className="text-[10px] text-slate-400 font-medium">4 of 15 used this year</span>
+                    <div className="mt-1 text-2xl font-black text-slate-900">{Math.max(0, 15 - privilegeUsed)} Days</div>
+                    <span className="text-[10px] text-slate-400 font-medium">{privilegeUsed} of 15 utilized</span>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                     <span className="text-[11px] font-bold text-slate-500 uppercase">Compensatory Off</span>
-                    <div className="mt-1 text-2xl font-black text-slate-900">4 Days</div>
-                    <span className="text-[10px] text-slate-400 font-medium">Earned through weekend shifts</span>
+                    <div className="mt-1 text-2xl font-black text-slate-900">{Math.max(0, 4 - compUsed)} Days</div>
+                    <span className="text-[10px] text-slate-400 font-medium">{compUsed} of 4 utilized</span>
                   </div>
                 </div>
               </div>
@@ -474,45 +487,58 @@ export default function Attandance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {myLogs.map((log) => {
-                    const inTime = log.clockIn
-                      ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : '—';
-                    const outTime = log.clockOut
-                      ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : log.clockIn
-                      ? 'In Progress'
-                      : '—';
-
-                    return (
-                      <tr key={log._id || log.id} className="hover:bg-slate-50/70 transition">
-                        <td className="px-6 py-3.5 font-bold font-mono text-slate-900">{log.date}</td>
-                        <td className="px-4 py-3.5 font-mono text-emerald-600 font-semibold">{inTime}</td>
-                        <td className="px-4 py-3.5 font-mono text-slate-600">{outTime}</td>
-                        <td className="px-4 py-3.5 font-mono font-bold text-slate-800">
-                          {log.totalHours || '0h 0m'}
-                        </td>
-                        <td className="px-4 py-3.5 font-mono text-slate-400">{log.ipAddress || '127.0.0.1'}</td>
-                        <td className="px-4 py-3.5">
-                          <span
-                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                              log.status === 'Present'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : log.status === 'Late'
-                                ? 'bg-amber-50 text-amber-700'
-                                : log.status === 'Half Day'
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {log.status}
-                          </span>
-                        </td>
+                  {loading ? (
+                    [1, 2, 3, 4].map((i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="px-6 py-3.5"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-3.5"><div className="h-4 w-14 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-3.5"><div className="h-4 w-20 bg-slate-100 rounded" /></td>
+                        <td className="px-4 py-3.5"><div className="h-5 w-16 bg-slate-100 rounded-full" /></td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    myLogs.map((log) => {
+                      const inTime = log.clockIn
+                        ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '—';
+                      const outTime = log.clockOut
+                        ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : log.clockIn
+                        ? 'In Progress'
+                        : '—';
 
-                  {myLogs.length === 0 && (
+                      return (
+                        <tr key={log._id || log.id} className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-3.5 font-bold font-mono text-slate-900">{log.date}</td>
+                          <td className="px-4 py-3.5 font-mono text-emerald-600 font-semibold">{inTime}</td>
+                          <td className="px-4 py-3.5 font-mono text-slate-600">{outTime}</td>
+                          <td className="px-4 py-3.5 font-mono font-bold text-slate-800">
+                            {log.totalHours || '0h 0m'}
+                          </td>
+                          <td className="px-4 py-4 font-mono text-slate-400">{log.ipAddress || '127.0.0.1'}</td>
+                          <td className="px-4 py-3.5">
+                            <span
+                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                                log.status === 'Present'
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : log.status === 'Late'
+                                  ? 'bg-amber-50 text-amber-700'
+                                  : log.status === 'Half Day'
+                                  ? 'bg-blue-50 text-blue-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {log.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+
+                  {!loading && myLogs.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-slate-400 font-medium">
                         No punch logs recorded yet. Use the punch console above to record your shift!
@@ -598,50 +624,72 @@ export default function Attandance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredOrgRoster.map((r) => {
-                    const inTime = r.clockIn
-                      ? new Date(r.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : '—';
-                    const outTime = r.clockOut
-                      ? new Date(r.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      : 'In Progress';
-
-                    return (
-                      <tr key={r._id || r.id} className="hover:bg-slate-50/70 transition">
+                  {loading ? (
+                    [1, 2, 3, 4].map((i) => (
+                      <tr key={i} className="animate-pulse">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                              {(r.employee?.name || r.user?.name || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900">{r.employee?.name || r.user?.name}</div>
-                              <div className="text-[11px] font-mono text-slate-400">{r.user?.email}</div>
+                            <div className="h-8 w-8 rounded-full bg-slate-200" />
+                            <div className="space-y-1">
+                              <div className="h-4 w-28 bg-slate-200 rounded" />
+                              <div className="h-2.5 w-20 bg-slate-100 rounded" />
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 font-medium text-slate-600">
-                          {r.employee?.department || 'General'}
-                        </td>
-                        <td className="px-4 py-4 font-mono text-emerald-600 font-semibold">{inTime}</td>
-                        <td className="px-4 py-4 font-mono text-slate-600">{outTime}</td>
-                        <td className="px-4 py-4 font-mono font-bold text-slate-900">{r.totalHours || '0h 0m'}</td>
-                        <td className="px-4 py-4 font-mono text-slate-500">{r.ipAddress || '127.0.0.1'}</td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
-                              r.status === 'Present'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : r.status === 'Late'
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200'
-                            }`}
-                          >
-                            {r.status}
-                          </span>
-                        </td>
+                        <td className="px-4 py-4"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-14 bg-slate-200 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-4 w-24 bg-slate-100 rounded" /></td>
+                        <td className="px-4 py-4"><div className="h-5 w-16 bg-slate-100 rounded-full" /></td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    filteredOrgRoster.map((r) => {
+                      const inTime = r.clockIn
+                        ? new Date(r.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '—';
+                      const outTime = r.clockOut
+                        ? new Date(r.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'In Progress';
+
+                      return (
+                        <tr key={r._id || r.id} className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                                {(r.employee?.name || r.user?.name || 'U').charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900">{r.employee?.name || r.user?.name}</div>
+                                <div className="text-[11px] font-mono text-slate-400">{r.user?.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 font-medium text-slate-600">
+                            {r.employee?.department || 'General'}
+                          </td>
+                          <td className="px-4 py-4 font-mono text-emerald-600 font-semibold">{inTime}</td>
+                          <td className="px-4 py-4 font-mono text-slate-600">{outTime}</td>
+                          <td className="px-4 py-4 font-mono font-bold text-slate-900">{r.totalHours || '0h 0m'}</td>
+                          <td className="px-4 py-4 font-mono text-slate-500">{r.ipAddress || '127.0.0.1'}</td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
+                                r.status === 'Present'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : r.status === 'Late'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-blue-50 text-blue-700 border border-blue-200'
+                              }`}
+                            >
+                              {r.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
 
                   {filteredOrgRoster.length === 0 && (
                     <tr>
@@ -688,56 +736,72 @@ export default function Attandance() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {leaveRequests.map((leave) => (
-                  <tr key={leave._id || leave.id} className="hover:bg-slate-50/70 transition">
-                    <td className="px-6 py-3.5 font-bold text-slate-900">
-                      {leave.employee?.name || leave.user?.name || user?.name}
-                    </td>
-                    <td className="px-4 py-3.5 font-medium text-slate-700">{leave.type}</td>
-                    <td className="px-4 py-3.5 font-mono text-slate-600">
-                      {leave.from} → {leave.to}
-                    </td>
-                    <td className="px-4 py-3.5 font-mono font-bold text-slate-900">{leave.days} day(s)</td>
-                    <td className="px-4 py-3.5 text-slate-500 max-w-xs truncate">{leave.reason || 'Personal'}</td>
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                          leave.status === 'Approved'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : leave.status === 'Rejected'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {leave.status}
-                      </span>
-                    </td>
-                    {canManageAttendance && (
-                      <td className="px-4 py-3.5 text-right">
-                        {leave.status === 'Pending Review' ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleLeaveStatusUpdate(leave._id || leave.id, 'Approved')}
-                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleLeaveStatusUpdate(leave._id || leave.id, 'Rejected')}
-                              className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 font-mono">Processed</span>
-                        )}
+                {loading ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-6 py-3.5"><div className="h-4 w-28 bg-slate-200 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-24 bg-slate-100 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-12 bg-slate-200 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-32 bg-slate-100 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-5 w-16 bg-slate-100 rounded-full" /></td>
+                      {canManageAttendance && (
+                        <td className="px-4 py-3.5 text-right"><div className="h-6 w-24 bg-slate-200 rounded-lg ml-auto" /></td>
+                      )}
+                    </tr>
+                  ))
+                ) : (
+                  leaveRequests.map((leave) => (
+                    <tr key={leave._id || leave.id} className="hover:bg-slate-50/70 transition">
+                      <td className="px-6 py-3.5 font-bold text-slate-900">
+                        {leave.employee?.name || leave.user?.name || user?.name}
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td className="px-4 py-3.5 font-medium text-slate-700">{leave.type}</td>
+                      <td className="px-4 py-3.5 font-mono text-slate-600">
+                        {leave.from} → {leave.to}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono font-bold text-slate-900">{leave.days} day(s)</td>
+                      <td className="px-4 py-3.5 text-slate-500 max-w-xs truncate">{leave.reason || 'Personal'}</td>
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                            leave.status === 'Approved'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : leave.status === 'Rejected'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {leave.status}
+                        </span>
+                      </td>
+                      {canManageAttendance && (
+                        <td className="px-4 py-3.5 text-right">
+                          {leave.status === 'Pending Review' ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleLeaveStatusUpdate(leave._id || leave.id, 'Approved')}
+                                className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleLeaveStatusUpdate(leave._id || leave.id, 'Rejected')}
+                                className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-mono">Processed</span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
 
                 {leaveRequests.length === 0 && (
                   <tr>

@@ -19,8 +19,28 @@ import {
   X,
 } from 'lucide-react';
 import { payrollApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function OrgEmployeePayRol() {
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+
+  const canManagePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    can('manage', 'payroll');
+
+  const canCreatePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    hasPermission('create_payroll') ||
+    can('create', 'payroll');
+
+  const canDeletePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    hasPermission('delete_payroll') ||
+    can('delete', 'payroll');
+
   const [payrolls, setPayrolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,12 +169,14 @@ export default function OrgEmployeePayRol() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition cursor-pointer"
-          >
-            <Plus size={16} /> Add Salary Entry
-          </button>
+          {canCreatePayroll && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition cursor-pointer"
+            >
+              <Plus size={16} /> Add Salary Entry
+            </button>
+          )}
           <button
             onClick={fetchRecords}
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
@@ -304,9 +326,10 @@ export default function OrgEmployeePayRol() {
 
                       <td className="px-6 py-4">
                         <select
+                          disabled={!canManagePayroll}
                           value={row.paymentStatus}
                           onChange={(e) => handleStatusChange(row._id, e.target.value)}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-bold focus:outline-none"
+                          className={`rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-bold focus:outline-none ${canManagePayroll ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}
                         >
                           <option value="Pending">Pending</option>
                           <option value="Processing">Processing</option>
@@ -324,13 +347,15 @@ export default function OrgEmployeePayRol() {
                           >
                             <FileText size={15} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(row._id)}
-                            title="Delete"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {canDeletePayroll && (
+                            <button
+                              onClick={() => handleDelete(row._id)}
+                              title="Delete"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

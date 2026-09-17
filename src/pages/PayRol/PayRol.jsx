@@ -29,10 +29,30 @@ import {
   X,
 } from 'lucide-react';
 import { payrollApi, employeeApi } from '../../Service';
+import { usePermissions } from '../../utils/usePermissions';
 
 export default function PayRol() {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { hasPermission, can, isSuperAdmin, role } = usePermissions();
+
+  const canManagePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    can('manage', 'payroll');
+
+  const canCreatePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    hasPermission('create_payroll') ||
+    can('create', 'payroll');
+
+  const canDeletePayroll =
+    isSuperAdmin ||
+    hasPermission('manage_payroll') ||
+    hasPermission('delete_payroll') ||
+    can('delete', 'payroll');
+
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'org-employee' | 'student' | 'it-solution'
   const [payrolls, setPayrolls] = useState([]);
   const [stats, setStats] = useState({
@@ -179,13 +199,15 @@ export default function PayRol() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition active:scale-95 cursor-pointer"
-            >
-              <Plus size={16} />
-              Process New Payroll
-            </button>
+            {canCreatePayroll && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition active:scale-95 cursor-pointer"
+              >
+                <Plus size={16} />
+                Process New Payroll
+              </button>
+            )}
             <button
               onClick={fetchData}
               title="Refresh"
@@ -506,9 +528,10 @@ export default function PayRol() {
 
                       <td className="px-6 py-4">
                         <select
+                          disabled={!canManagePayroll}
                           value={row.paymentStatus}
                           onChange={(e) => handleStatusChange(row._id, e.target.value)}
-                          className={`rounded-lg border px-2.5 py-1 text-xs font-bold focus:outline-none cursor-pointer ${statusBadge}`}
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-bold focus:outline-none ${canManagePayroll ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'} ${statusBadge}`}
                         >
                           <option value="Pending">Pending</option>
                           <option value="Processing">Processing</option>
@@ -526,13 +549,15 @@ export default function PayRol() {
                           >
                             <FileText size={15} />
                           </button>
-                          <button
-                            onClick={() => handleDelete(row._id)}
-                            title="Move to Recycle Bin"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {canDeletePayroll && (
+                            <button
+                              onClick={() => handleDelete(row._id)}
+                              title="Move to Recycle Bin"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
