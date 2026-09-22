@@ -15,7 +15,9 @@ import { loginUser, clearAuthError } from "../../redux/slices/authSlice";
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+  const { isAuthenticated, loading, error } = useSelector(
+    (state) => state.auth,
+  );
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -177,18 +179,9 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Footer Security Badge */}
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-          <ShieldCheck size={14} className="text-emerald-500" />
-          <span>Encrypted Gateway • Automatic RBAC Role Determination</span>
-        </div>
-
         {/* Portal Overview & Accessibility */}
         <div className="mt-6 text-center text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-          <p className="font-semibold text-slate-700">Official GoTechEdu Portal</p>
-          <p className="mt-1 text-[11px] text-slate-400">
-            Secure access to GoTechEdu’s HRMS, employee services, learning and training resources, career opportunities, and business management tools.
-          </p>
+          <p className="font-semibold text-slate-700">GoTechEdu Portal</p>
         </div>
       </div>
     </div>

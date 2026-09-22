@@ -65,7 +65,7 @@ export default function Sidebar() {
       try {
         localStorage.setItem(
           "hrms_sidebar_collapsed_sections",
-          JSON.stringify(updated)
+          JSON.stringify(updated),
         );
       } catch {
         // ignore storage errors
@@ -98,90 +98,97 @@ export default function Sidebar() {
   const checkItemPermission = (item) => {
     if (isSuperAdmin) return true;
     if (!item.permission) return true;
-    const keys = Array.isArray(item.permission) ? item.permission : [item.permission];
+    const keys = Array.isArray(item.permission)
+      ? item.permission
+      : [item.permission];
     return keys.some((k) => hasPermission(k));
   };
 
   let rawNavSections = [];
 
-  if (role === 'trainee') {
+  if (role === "trainee") {
     rawNavSections = [
       {
-        group: 'My Learning Space',
+        group: "My Learning Space",
         items: [
           {
-            name: 'My Learning Hub',
-            path: '/learninghub',
+            name: "My Learning Hub",
+            path: "/learninghub",
             icon: GraduationCap,
           },
           {
-            name: 'Live Lectures',
-            path: '/learninghub',
+            name: "Live Lectures",
+            path: "/learninghub",
             icon: Clock,
           },
         ],
       },
       {
-        group: 'Community & Ethics',
+        group: "Community & Ethics",
         items: [
           {
-            name: 'Peer Discussions',
-            path: '/discussions',
+            name: "Peer Discussions",
+            path: "/discussions",
             icon: MessagesSquare,
           },
           {
-            name: 'Policy & Grievance',
-            path: '/accusations',
+            name: "Policy & Grievance",
+            path: "/accusations",
             icon: ShieldAlert,
           },
           {
-            name: 'Student Profile',
-            path: '/profile',
+            name: "Student Profile",
+            path: "/profile",
             icon: User,
           },
         ],
       },
     ];
-  } else if (role === 'trainer') {
+  } else if (role === "trainer") {
     rawNavSections = [
       {
-        group: 'Trainer Portal',
+        group: "Trainer Portal",
         items: [
           {
-            name: 'Instructor Hub',
-            path: '/learninghub',
+            name: "Instructor Hub",
+            path: "/learninghub",
             icon: LayoutDashboard,
           },
           {
-            name: 'Cohort Batches',
-            path: '/learninghub/batches',
+            name: "Cohort Batches",
+            path: "/learninghub/batches",
             icon: Users,
           },
         ],
       },
       {
-        group: 'Operations',
+        group: "Operations",
         items: [
           {
-            name: 'Attendance & Leaves',
-            path: '/attendance',
+            name: "Attendance & Leaves",
+            path: "/attendance",
             icon: Clock,
-            permission: ['manage_attandance', 'manage_attendance', 'add_attendance', 'view_attendance'],
+            permission: [
+              "manage_attandance",
+              "manage_attendance",
+              "add_attendance",
+              "view_attendance",
+            ],
           },
           {
-            name: 'Task Board',
-            path: '/tasks',
+            name: "Task Board",
+            path: "/tasks",
             icon: CheckSquare,
-            permission: ['manage_task', 'view_task'],
+            permission: ["manage_task", "view_task"],
           },
           {
-            name: 'Team Discussions',
-            path: '/discussions',
+            name: "Team Discussions",
+            path: "/discussions",
             icon: MessagesSquare,
           },
           {
-            name: 'Trainer Profile',
-            path: '/profile',
+            name: "Trainer Profile",
+            path: "/profile",
             icon: User,
           },
         ],
@@ -190,165 +197,179 @@ export default function Sidebar() {
   } else {
     rawNavSections = [
       {
-        group: 'Main Overview',
+        group: "Main Overview",
         items: [
           {
-            name: 'Dashboard',
-            path: '/dashboard',
+            name: "Dashboard",
+            path: "/dashboard",
             icon: LayoutDashboard,
             permission: null,
           },
           {
-            name: 'Employee Directory',
-            path: '/employees',
+            name: "Employee Directory",
+            path: "/employees",
             icon: Users,
-            permission: ['manage_employee', 'view_employee', 'create_employee'],
+            permission: ["manage_employee", "view_employee", "create_employee"],
           },
         ],
       },
       {
-        group: 'Operations & Work',
+        group: "Operations & Work",
         items: [
           {
-            name: 'Attendance & Leaves',
-            path: '/attendance',
+            name: "Attendance & Leaves",
+            path: "/attendance",
             icon: Clock,
-            permission: ['manage_attandance', 'manage_attendance', 'add_attendance', 'view_attendance'],
+            permission: [
+              "manage_attandance",
+              "manage_attendance",
+              "add_attendance",
+              "view_attendance",
+            ],
           },
           {
-            name: 'Timesheets',
-            path: '/timesheets',
+            name: "Timesheets",
+            path: "/timesheets",
             icon: FileSpreadsheet,
-            permission: ['manage_timesheet', 'view_timesheet', 'add_timesheet'],
+            permission: ["manage_timesheet", "view_timesheet", "add_timesheet"],
           },
           {
-            name: 'Projects',
-            path: '/projects',
+            name: "Projects",
+            path: "/projects",
             icon: FolderKanban,
-            permission: ['manage_project', 'view_project', 'create_project', 'add_project'],
+            permission: [
+              "manage_project",
+              "view_project",
+              "create_project",
+              "add_project",
+            ],
           },
           {
-            name: 'Task Board',
-            path: '/tasks',
+            name: "Task Board",
+            path: "/tasks",
             icon: CheckSquare,
-            permission: ['manage_task', 'view_task', 'add_task'],
+            permission: ["manage_task", "view_task", "add_task"],
           },
           {
-            name: 'Holiday Calendar',
-            path: '/holidays',
+            name: "Holiday Calendar",
+            path: "/holidays",
             icon: CalendarDays,
-            permission: ['manage_holiday', 'view_holiday'],
+            permission: ["manage_holiday", "view_holiday"],
           },
           {
-            name: 'Team Discussions',
-            path: '/discussions',
+            name: "Team Discussions",
+            path: "/discussions",
             icon: MessagesSquare,
             permission: null,
           },
         ],
       },
+      // {
+      //   group: 'Finance & Payroll',
+      //   items: [
+      //     {
+      //       name: 'Payroll Dashboard',
+      //       path: '/payroll',
+      //       icon: DollarSign,
+      //       permission: ['manage_payroll', 'view_payroll'],
+      //     },
+      //     {
+      //       name: 'Employee Payroll',
+      //       path: '/payroll/org-employees',
+      //       icon: Users,
+      //       permission: ['manage_payroll', 'view_payroll'],
+      //     },
+      //     {
+      //       name: 'Student Stipends',
+      //       path: '/payroll/students',
+      //       icon: GraduationCap,
+      //       permission: ['manage_payroll', 'view_payroll'],
+      //     },
+      //     {
+      //       name: 'IT Solutions Payroll',
+      //       path: '/payroll/it-solutions',
+      //       icon: Building2,
+      //       permission: ['manage_payroll', 'view_payroll'],
+      //     },
+      //   ],
+      // },
       {
-        group: 'Finance & Payroll',
+        group: "Talent & Growth",
         items: [
           {
-            name: 'Payroll Dashboard',
-            path: '/payroll',
-            icon: DollarSign,
-            permission: ['manage_payroll', 'view_payroll'],
-          },
-          {
-            name: 'Employee Payroll',
-            path: '/payroll/org-employees',
-            icon: Users,
-            permission: ['manage_payroll', 'view_payroll'],
-          },
-          {
-            name: 'Student Stipends',
-            path: '/payroll/students',
+            name: "Learning Hub",
+            path: "/learninghub",
             icon: GraduationCap,
-            permission: ['manage_payroll', 'view_payroll'],
+            permission: ["manage_learninghub", "view_learninghub"],
           },
           {
-            name: 'IT Solutions Payroll',
-            path: '/payroll/it-solutions',
-            icon: Building2,
-            permission: ['manage_payroll', 'view_payroll'],
-          },
-        ],
-      },
-      {
-        group: 'Talent & Growth',
-        items: [
-          {
-            name: 'Learning Hub',
-            path: '/learninghub',
-            icon: GraduationCap,
-            permission: ['manage_learninghub', 'view_learninghub'],
-          },
-          {
-            name: 'Cohort Batches',
-            path: '/learninghub/batches',
+            name: "Cohort Batches",
+            path: "/learninghub/batches",
             icon: Users,
-            permission: ['manage_learninghub', 'manage_batches'],
+            permission: ["manage_learninghub", "manage_batches"],
           },
           {
-            name: 'Career Postings',
-            path: '/careerpost',
+            name: "Career Postings",
+            path: "/careerpost",
             icon: Briefcase,
-            permission: ['manage_career', 'view_career'],
+            permission: ["manage_career", "view_career"],
           },
           {
-            name: 'Applications',
-            path: '/applications',
+            name: "Applications",
+            path: "/applications",
             icon: UserCheck,
-            permission: ['manage_career', 'manage_applications'],
+            permission: ["manage_career", "manage_applications"],
           },
           {
-            name: 'Client Inquiries',
-            path: '/contacts',
+            name: "Client Inquiries",
+            path: "/contacts",
             icon: MessageSquare,
-            permission: ['manage_contacts', 'manage_contact', 'view_contacts'],
+            permission: ["manage_contacts", "manage_contact", "view_contacts"],
           },
           {
-            name: 'Grievances & Policy',
-            path: '/accusations',
+            name: "Grievances & Policy",
+            path: "/accusations",
             icon: ShieldAlert,
             permission: null,
           },
           {
-            name: 'Company Bulletins',
-            path: '/blogs',
+            name: "Company Bulletins",
+            path: "/blogs",
             icon: Newspaper,
-            permission: ['manage_blogs', 'view_blogs'],
+            permission: ["manage_blogs", "view_blogs"],
           },
         ],
       },
       {
-        group: 'Administration & System',
+        group: "Administration & System",
         items: [
           {
-            name: 'System Settings',
-            path: '/settings',
+            name: "System Settings",
+            path: "/settings",
             icon: Settings,
-            permission: ['manage_settings', 'settings'],
+            permission: ["manage_settings", "settings"],
           },
           {
-            name: 'Roles & Privileges',
-            path: '/settings/roles',
+            name: "Roles & Privileges",
+            path: "/settings/roles",
             icon: Shield,
-            permission: ['manage_roles', 'roles_permissions'],
+            permission: ["manage_roles", "roles_permissions"],
           },
           {
-            name: 'Permission Matrix',
-            path: '/settings/permissions',
+            name: "Permission Matrix",
+            path: "/settings/permissions",
             icon: Sliders,
-            permission: ['manage_permissions', 'roles_permissions'],
+            permission: ["manage_permissions", "roles_permissions"],
           },
           {
-            name: 'Recycle Bin',
-            path: '/recycle-bin',
+            name: "Recycle Bin",
+            path: "/recycle-bin",
             icon: Trash2,
-            permission: ['manage_recycle_bin', 'recycle_bin', 'view_recycle_bin'],
+            permission: [
+              "manage_recycle_bin",
+              "recycle_bin",
+              "view_recycle_bin",
+            ],
           },
         ],
       },
@@ -437,7 +458,7 @@ export default function Sidebar() {
             const isSectionActive = section.items.some((item) =>
               item.path === "/dashboard"
                 ? location.pathname === "/dashboard"
-                : location.pathname.startsWith(item.path)
+                : location.pathname.startsWith(item.path),
             );
 
             return (

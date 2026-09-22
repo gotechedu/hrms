@@ -35,6 +35,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
     description: '',
     duration: '1 Week',
     learningObjectives: '',
+    circularUrl: '',
   });
 
   // Lesson Modal State
@@ -49,6 +50,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
     videoUrl: '',
     contentBody: '',
     documentUrl: '',
+    circularUrl: '',
     externalUrl: '',
     isPreview: false,
     isRequired: true,
@@ -94,6 +96,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
         description: mod.description || '',
         duration: mod.duration || '1 Week',
         learningObjectives: (mod.learningObjectives || []).join('\n'),
+        circularUrl: mod.circularUrl || mod.documentUrl || '',
       });
     } else {
       setEditingModule(null);
@@ -102,6 +105,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
         description: '',
         duration: '1 Week',
         learningObjectives: '',
+        circularUrl: '',
       });
     }
     setIsModuleModalOpen(true);
@@ -124,6 +128,8 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
           .split('\n')
           .map((s) => s.trim())
           .filter(Boolean),
+        circularUrl: moduleForm.circularUrl ? moduleForm.circularUrl.trim() : '',
+        documentUrl: moduleForm.circularUrl ? moduleForm.circularUrl.trim() : '',
       };
 
       if (editingModule) {
@@ -167,6 +173,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
         videoUrl: lesson.videoUrl || '',
         contentBody: lesson.contentBody || '',
         documentUrl: lesson.documentUrl || '',
+        circularUrl: lesson.circularUrl || lesson.documentUrl || '',
         externalUrl: lesson.externalUrl || '',
         isPreview: !!lesson.isPreview,
         isRequired: lesson.isRequired !== undefined ? !!lesson.isRequired : true,
@@ -181,6 +188,7 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
         videoUrl: '',
         contentBody: '',
         documentUrl: '',
+        circularUrl: '',
         externalUrl: '',
         isPreview: false,
         isRequired: true,
@@ -206,7 +214,8 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
         contentType: lessonForm.contentType,
         videoUrl: lessonForm.videoUrl,
         contentBody: lessonForm.contentBody,
-        documentUrl: lessonForm.documentUrl,
+        documentUrl: lessonForm.documentUrl || lessonForm.circularUrl,
+        circularUrl: lessonForm.circularUrl ? lessonForm.circularUrl.trim() : (lessonForm.documentUrl ? lessonForm.documentUrl.trim() : ''),
         externalUrl: lessonForm.externalUrl,
         isPreview: lessonForm.isPreview,
         isRequired: lessonForm.isRequired,
@@ -521,6 +530,24 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
+                  Module Circular / Syllabus URL (PDF, Google Drive, or Web Link)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://.../module-circular.pdf or Google Drive link"
+                  value={moduleForm.circularUrl}
+                  onChange={(e) =>
+                    setModuleForm({ ...moduleForm, circularUrl: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none font-mono shadow-2xs"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Students and trainees will view this circular directly inside the LMS interactive iframe viewer.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
                   Module Description
                 </label>
                 <textarea
@@ -597,10 +624,11 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none shadow-2xs"
                   >
                     <option value="video">Video Lecture</option>
-                    <option value="pdf">PDF Document</option>
-                    <option value="document">Source Code / Lab Guide</option>
+                    <option value="circular">Circular / Notice / Handbook (Iframe)</option>
+                    <option value="pdf">PDF Document (Iframe)</option>
+                    <option value="document">Lab Guide / Document (Iframe)</option>
                     <option value="text">Rich Text / Article</option>
-                    <option value="external_link">External Lab Link</option>
+                    <option value="external_link">External Web Link (Iframe)</option>
                   </select>
                 </div>
 
@@ -633,20 +661,34 @@ export default function CurriculumBuilderModal({ course, isOpen, onClose, onCurr
                 </div>
               )}
 
-              {(lessonForm.contentType === 'pdf' || lessonForm.contentType === 'document') && (
+              {(lessonForm.contentType === 'circular' ||
+                lessonForm.contentType === 'pdf' ||
+                lessonForm.contentType === 'document' ||
+                lessonForm.contentType === 'external_link' ||
+                lessonForm.contentType === 'video') && (
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Document / PDF URL
+                    {lessonForm.contentType === 'video'
+                      ? 'Attached Circular / Handout URL (Optional)'
+                      : 'Circular / Document / PDF URL (Embeddable in Iframe) *'}
                   </label>
                   <input
                     type="url"
-                    placeholder="https://.../handbook.pdf"
-                    value={lessonForm.documentUrl}
+                    required={lessonForm.contentType !== 'video'}
+                    placeholder="https://.../circular.pdf, Google Drive, or Web link"
+                    value={lessonForm.circularUrl || lessonForm.documentUrl}
                     onChange={(e) =>
-                      setLessonForm({ ...lessonForm, documentUrl: e.target.value })
+                      setLessonForm({
+                        ...lessonForm,
+                        circularUrl: e.target.value,
+                        documentUrl: e.target.value,
+                      })
                     }
                     className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none font-mono shadow-2xs"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Embeds cleanly via Google Docs Viewer or native iframe for all trainees.
+                  </p>
                 </div>
               )}
 

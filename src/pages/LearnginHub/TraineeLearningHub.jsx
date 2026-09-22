@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { lmsApi } from '../../Service/lmsApi';
+import CircularViewerModal from '../../Components/Common/CircularViewerModal';
 
 export default function TraineeLearningHub() {
   const navigate = useNavigate();
@@ -35,6 +36,10 @@ export default function TraineeLearningHub() {
   const [attendanceData, setAttendanceData] = useState(null);
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Circular Viewing Modals
+  const [viewingCircularClass, setViewingCircularClass] = useState(null);
+  const [viewingCourseCircular, setViewingCourseCircular] = useState(null);
 
   // Submit Assignment Modal
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -329,13 +334,22 @@ export default function TraineeLearningHub() {
                     </div>
 
                     {/* Action */}
-                    <div className="pt-1 flex items-center justify-between">
+                    <div className="pt-1 flex items-center gap-2">
                       <button
                         onClick={() => navigate(`/learninghub/player/${enr._id}`)}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-500/20 hover:bg-blue-700 transition cursor-pointer active:scale-98"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-500/20 hover:bg-blue-700 transition cursor-pointer active:scale-98"
                       >
                         <Play className="h-3.5 w-3.5 fill-current" />
                         <span>Continue Learning</span>
+                      </button>
+
+                      <button
+                        onClick={() => setViewingCourseCircular(enr)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer shadow-2xs"
+                        title="View Course Syllabus & Circular"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Circular</span>
                       </button>
                     </div>
                   </div>
@@ -385,20 +399,33 @@ export default function TraineeLearningHub() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    {c.meetingUrl ? (
-                      <a
-                        href={c.meetingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition shadow-sm shadow-blue-500/20"
-                      >
-                        <Video className="h-3.5 w-3.5" />
-                        <span>Join Live Classroom</span>
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-400 font-medium">Meeting link will be shared prior to class</span>
-                    )}
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {c.meetingUrl ? (
+                        <a
+                          href={c.meetingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 transition shadow-sm shadow-blue-500/20"
+                        >
+                          <Video className="h-3.5 w-3.5" />
+                          <span>Join Classroom</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">Meeting link will be shared prior to class</span>
+                      )}
+
+                      {(c.circularUrl || (c.resources && c.resources.length > 0)) && (
+                        <button
+                          onClick={() => setViewingCircularClass(c)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 px-3 py-2 text-xs font-bold hover:bg-purple-100 transition cursor-pointer shadow-2xs"
+                          title="View Class Circular & Handout"
+                        >
+                          <FileText className="h-3.5 w-3.5 text-purple-600" />
+                          <span>Class Circular</span>
+                        </button>
+                      )}
+                    </div>
 
                     {c.recordingUrl && (
                       <a
@@ -809,6 +836,41 @@ export default function TraineeLearningHub() {
           </div>
         </div>
       )}
+
+      {/* Class Circular Iframe Modal */}
+      <CircularViewerModal
+        isOpen={Boolean(viewingCircularClass)}
+        onClose={() => setViewingCircularClass(null)}
+        title={`${viewingCircularClass?.title || 'Class'} Circular`}
+        subtitle={`Scheduled: ${
+          viewingCircularClass?.sessionDate
+            ? new Date(viewingCircularClass.sessionDate).toLocaleDateString()
+            : ''
+        } (${viewingCircularClass?.startTime || ''} - ${viewingCircularClass?.endTime || ''})`}
+        circularUrl={
+          viewingCircularClass?.circularUrl || viewingCircularClass?.resources?.[0]?.url
+        }
+        badge="Class Circular"
+        onAcknowledge={() => {
+          toast.success('Class circular acknowledged!');
+          setViewingCircularClass(null);
+        }}
+        acknowledgeText="I Have Reviewed This Circular"
+      />
+
+      {/* Course & Curriculum Circular Modal */}
+      <CircularViewerModal
+        isOpen={Boolean(viewingCourseCircular)}
+        onClose={() => setViewingCourseCircular(null)}
+        title={`${viewingCourseCircular?.course?.title || 'Course'} Syllabus & Circular`}
+        subtitle={`Batch: ${viewingCourseCircular?.batch?.name || 'Cohort'}`}
+        circularUrl={
+          viewingCourseCircular?.course?.circularUrl ||
+          viewingCourseCircular?.course?.syllabusPdfUrl ||
+          'https://gotechedu.com/learninghub'
+        }
+        badge="Course Circular"
+      />
     </div>
   );
 }

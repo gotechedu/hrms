@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { lmsApi } from '../../Service/lmsApi';
+import CircularViewerModal from '../../Components/Common/CircularViewerModal';
 
 export default function TrainerHub() {
   const [activeTab, setActiveTab] = useState('batches'); // 'batches' | 'classes' | 'attendance' | 'assignments'
@@ -31,6 +32,7 @@ export default function TrainerHub() {
 
   // Class Scheduling Modal
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [viewingCircularClass, setViewingCircularClass] = useState(null);
   const [classForm, setClassForm] = useState({
     title: '',
     batchId: '',
@@ -39,6 +41,7 @@ export default function TrainerHub() {
     endTime: '21:30',
     meetingProvider: 'Google Meet',
     meetingUrl: '',
+    circularUrl: '',
     description: '',
   });
 
@@ -440,14 +443,26 @@ export default function TrainerHub() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <button
-                      onClick={() => handleOpenAttendance(c)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-100 transition cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Mark Attendance</span>
-                    </button>
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleOpenAttendance(c)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold hover:bg-emerald-100 transition cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Mark Attendance</span>
+                      </button>
+
+                      {c.circularUrl && (
+                        <button
+                          onClick={() => setViewingCircularClass(c)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 text-xs font-bold hover:bg-purple-100 transition cursor-pointer"
+                        >
+                          <FileText className="h-3.5 w-3.5 text-purple-600" />
+                          <span>Class Circular</span>
+                        </button>
+                      )}
+                    </div>
 
                     {c.meetingUrl && (
                       <a
@@ -628,6 +643,22 @@ export default function TrainerHub() {
                   onChange={(e) => setClassForm({ ...classForm, meetingUrl: e.target.value })}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none font-mono shadow-2xs"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Class Circular / Handout URL (PDF, Google Drive, or Web Link)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://.../handout.pdf, Google Drive, or Web link"
+                  value={classForm.circularUrl}
+                  onChange={(e) => setClassForm({ ...classForm, circularUrl: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none font-mono shadow-2xs"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Trainees will be able to view and read this circular directly in their LMS interactive iframe viewer.
+                </p>
               </div>
 
               <div>
@@ -1040,6 +1071,22 @@ export default function TrainerHub() {
           </div>
         </div>
       )}
+
+      {/* Class Circular Preview Modal for Trainer */}
+      <CircularViewerModal
+        isOpen={Boolean(viewingCircularClass)}
+        onClose={() => setViewingCircularClass(null)}
+        title={`${viewingCircularClass?.title || 'Class'} Circular`}
+        subtitle={`Scheduled: ${
+          viewingCircularClass?.sessionDate
+            ? new Date(viewingCircularClass.sessionDate).toLocaleDateString()
+            : ''
+        } (${viewingCircularClass?.startTime || ''} - ${viewingCircularClass?.endTime || ''})`}
+        circularUrl={
+          viewingCircularClass?.circularUrl || viewingCircularClass?.resources?.[0]?.url
+        }
+        badge="Class Circular"
+      />
     </div>
   );
 }
