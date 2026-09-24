@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   MessageSquare,
@@ -11,18 +12,12 @@ import {
   ChevronRight,
   Trash2,
   FileText,
-  DollarSign,
   Building2,
   RefreshCw,
   List,
   LayoutGrid,
   Plus,
   X,
-  Send,
-  User,
-  Shield,
-  Briefcase,
-  ExternalLink,
   MessageCircle,
 } from "lucide-react";
 import { contactApi } from "../../Service";
@@ -57,6 +52,7 @@ const BUDGET_OPTIONS = [
 ];
 
 export default function Contacts() {
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
   // Inquiries List State
@@ -77,11 +73,7 @@ export default function Contacts() {
     converted: 0,
   });
 
-  // Selected Detail Modal
-  const [activeInquiry, setActiveInquiry] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [noteText, setNoteText] = useState("");
-  const [submittingNote, setSubmittingNote] = useState(false);
 
   // Manual Lead Creation Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -175,9 +167,6 @@ export default function Contacts() {
         setInquiries((prev) =>
           prev.map((item) => (item._id === inquiryId ? { ...item, status: newStatus } : item))
         );
-        if (activeInquiry && activeInquiry._id === inquiryId) {
-          setActiveInquiry((prev) => ({ ...prev, status: newStatus }));
-        }
         fetchStats();
       }
     } catch (err) {
@@ -185,27 +174,6 @@ export default function Contacts() {
       toast.error(err.message || "Failed to update status");
     } finally {
       setUpdatingStatus(false);
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!noteText.trim() || !activeInquiry) return;
-    try {
-      setSubmittingNote(true);
-      const res = await contactApi.updateInquiry(activeInquiry._id, { note: noteText.trim() });
-      if (res && res.inquiry) {
-        toast.success("Follow-up note logged");
-        setActiveInquiry(res.inquiry);
-        setInquiries((prev) =>
-          prev.map((item) => (item._id === activeInquiry._id ? res.inquiry : item))
-        );
-        setNoteText("");
-      }
-    } catch (err) {
-      console.error("Error adding note:", err);
-      toast.error(err.message || "Failed to append follow-up note");
-    } finally {
-      setSubmittingNote(false);
     }
   };
 
@@ -217,9 +185,6 @@ export default function Contacts() {
       await contactApi.deleteInquiry(id);
       toast.success("Inquiry moved to Universal Recycle Bin");
       setInquiries((prev) => prev.filter((item) => item._id !== id));
-      if (activeInquiry && activeInquiry._id === id) {
-        setActiveInquiry(null);
-      }
       fetchStats();
     } catch (err) {
       console.error("Error deleting inquiry:", err);
@@ -510,7 +475,7 @@ export default function Contacts() {
                   return (
                     <tr
                       key={inq._id}
-                      onClick={() => setActiveInquiry(inq)}
+                      onClick={() => navigate(`/contacts/${inq._id}`)}
                       className="hover:bg-slate-50/80 cursor-pointer transition"
                     >
                       {/* Client Info */}
@@ -594,14 +559,14 @@ export default function Contacts() {
                       {/* Action Triggers */}
                       <td className="py-3 pl-3 pr-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setActiveInquiry(inq)}
-                            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition"
-                            title="View Full Scope"
+                          <Link
+                            to={`/contacts/${inq._id}`}
+                            className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
+                            title="Open Inquiry Details & Quotation Hub"
                           >
-                            <FileText className="h-4 w-4" />
-                          </button>
+                            <FileText className="h-3.5 w-3.5" />
+                            Details
+                          </Link>
 
                           <a
                             href={`https://wa.me/${inq.phone.replace(/[^0-9]/g, "")}`}
@@ -642,7 +607,7 @@ export default function Contacts() {
             return (
               <div
                 key={inq._id}
-                onClick={() => setActiveInquiry(inq)}
+                onClick={() => navigate(`/contacts/${inq._id}`)}
                 className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs hover:shadow-sm hover:border-slate-300 transition cursor-pointer flex flex-col justify-between"
               >
                 <div>
@@ -694,7 +659,7 @@ export default function Contacts() {
                     })}
                   </span>
 
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <a
                       href={`mailto:${inq.email}`}
                       className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
@@ -709,205 +674,28 @@ export default function Contacts() {
                     >
                       <Phone className="h-3.5 w-3.5" />
                     </a>
-                    <button
-                      type="button"
-                      onClick={() => setActiveInquiry(inq)}
-                      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                      title="View Details"
+                    <a
+                      href={`https://wa.me/${inq.phone.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition"
+                      title="WhatsApp Chat"
                     >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
+                      <MessageCircle className="h-3.5 w-3.5" />
+                    </a>
+                    <Link
+                      to={`/contacts/${inq._id}`}
+                      className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition ml-1"
+                      title="Open Complete Inquiry Details & Quotation Hub"
+                    >
+                      Details
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
                   </div>
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* =====================================================
-          INQUIRY DETAIL MODAL
-      ====================================================== */}
-      {activeInquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-200">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-lg shadow-sm">
-                  {(activeInquiry.fullName || "C").charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{activeInquiry.fullName}</h3>
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <Building2 className="h-3 w-3" />
-                    {activeInquiry.company || "Independent Enterprise Client"}
-                    <span className="text-slate-300">•</span>
-                    <span>Received {new Date(activeInquiry.createdAt).toLocaleString("en-IN")}</span>
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveInquiry(null)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Quick Status Bar */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-200/70">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider text-[10px]">
-                  Pipeline Stage:
-                </span>
-                <select
-                  value={activeInquiry.status}
-                  disabled={updatingStatus}
-                  onChange={(e) => handleStatusChange(activeInquiry._id, e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  {Object.keys(STATUS_CONFIG).map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Direct Communication Action Triggers */}
-              <div className="flex items-center gap-2">
-                <a
-                  href={`tel:${activeInquiry.phone}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                  Call Client
-                </a>
-
-                <a
-                  href={`mailto:${activeInquiry.email}?subject=GoTechEdu%20Consultation%20Follow-up%20-%20${encodeURIComponent(
-                    activeInquiry.service
-                  )}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-blue-700 transition"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  Send Email
-                </a>
-
-                <a
-                  href={`https://wa.me/${activeInquiry.phone.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"
-                >
-                  <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
-                  WhatsApp
-                </a>
-              </div>
-            </div>
-
-            {/* Inquiry Scope & Meta Details */}
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                  Target Technical Solution
-                </p>
-                <p className="mt-1 text-sm font-bold text-slate-900">{activeInquiry.service}</p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                  Estimated Project Budget
-                </p>
-                <p className="mt-1 text-sm font-bold text-blue-600 font-mono">
-                  {activeInquiry.budget || "Not Specified"}
-                </p>
-              </div>
-            </div>
-
-            {/* Scope Message */}
-            <div className="mt-4">
-              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Client Project Brief & Architecture Scope
-              </p>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                {activeInquiry.message}
-              </div>
-            </div>
-
-            {/* Internal Staff Notes & Audit Log */}
-            <div className="mt-6 pt-4 border-t border-slate-200">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3 flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5 text-slate-500" />
-                Staff Follow-up Notes ({activeInquiry.adminNotes?.length || 0})
-              </h4>
-
-              {/* Note List */}
-              <div className="space-y-2 max-h-40 overflow-y-auto mb-3">
-                {activeInquiry.adminNotes && activeInquiry.adminNotes.length > 0 ? (
-                  activeInquiry.adminNotes.map((nt, idx) => (
-                    <div key={idx} className="rounded-xl bg-slate-50 p-3 border border-slate-200/70 text-xs">
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                        <span className="font-bold text-slate-700">{nt.author || "Staff"}</span>
-                        <span>{new Date(nt.createdAt).toLocaleString("en-IN")}</span>
-                      </div>
-                      <p className="text-slate-800">{nt.note}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400 italic">No staff remarks logged yet.</p>
-                )}
-              </div>
-
-              {/* Add Note Input */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Record an internal follow-up remark, call summary, or NDA status..."
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddNote();
-                  }}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none"
-                />
-                <button
-                  type="button"
-                  disabled={submittingNote || !noteText.trim()}
-                  onClick={handleAddNote}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-40 transition flex items-center gap-1"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Post
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Bottom Actions */}
-            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(activeInquiry._id)}
-                  className="rounded-xl border border-red-200 text-red-600 px-4 py-2 text-xs font-bold hover:bg-red-50 transition flex items-center gap-1.5"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Move to Recycle Bin
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setActiveInquiry(null)}
-                className="ml-auto rounded-xl bg-slate-100 px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
         </div>
       )}
 

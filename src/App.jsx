@@ -39,6 +39,8 @@ import Blogs from './pages/Blogs/Blogs';
 import Profile from './pages/Profile/Profile';
 import Chat from './pages/Chat/Chat';
 import Contacts from './pages/Contacts/Contacts';
+import InquiryDetails from './pages/Contacts/InquiryDetails';
+import PublicQuotationView from './pages/Contacts/PublicQuotationView';
 import Discussions from './pages/Discussions/Discussions';
 
 // Payroll Module Pages
@@ -159,6 +161,9 @@ export default function App() {
           }
         />
 
+        {/* Public Client Quotation Review & Payment Registration Route */}
+        <Route path="/quotation/:id" element={<PublicQuotationView />} />
+
         {/* Dedicated Full-Screen Chat Application Workspace (No HRMS Sidebar) */}
         <Route
           path="/chat"
@@ -213,8 +218,9 @@ export default function App() {
           <Route path="/applications" element={<PermissionRoute permission={['manage_applications', 'manage_career']}><Applications /></PermissionRoute>} />
           <Route path="/applications/:id" element={<PermissionRoute permission={['manage_applications', 'manage_career']}><ApplicationDetails /></PermissionRoute>} />
 
-          {/* Client Consultations & Leads */}
-          <Route path="/contacts" element={<PermissionRoute permission={['manage_contacts', 'manage_contact', 'view_contacts']}><Contacts /></PermissionRoute>} />
+          {/* Client Consultations, Leads & Quotation Hub */}
+          <Route path="/contacts" element={<PermissionRoute permission={['manage_contacts', 'manage_contact', 'view_contacts', 'view_contact', 'contacts']}><Contacts /></PermissionRoute>} />
+          <Route path="/contacts/:id" element={<PermissionRoute permission={['manage_contacts', 'manage_contact', 'view_contacts', 'view_contact', 'contacts']}><InquiryDetails /></PermissionRoute>} />
 
           {/* Communication & Policy */}
           <Route path="/discussions" element={<Discussions />} />

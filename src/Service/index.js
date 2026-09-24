@@ -25,6 +25,7 @@ export { discussionApi } from './discussionApi';
 export { policyApi } from './policyApi';
 export { grievanceApi } from './grievanceApi';
 export { lmsApi } from './lmsApi';
+export { quotationApi } from './quotationApi';
 
 // Aliases for clean backward compatibility
 export { default as api } from './baseApi';
