@@ -190,10 +190,10 @@ export default function PublicQuotationView() {
               <strong className="text-slate-800">
                 {quotation.validUntil
                   ? new Date(quotation.validUntil).toLocaleDateString('en-IN', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
                   : '14 Days'}
               </strong>
             </span>

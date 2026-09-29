@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 import {
   FileText,
   Plus,
@@ -15,6 +16,12 @@ import {
   Eye,
   Tag,
   ArrowUpRight,
+  UploadCloud,
+  Link2,
+  Image as ImageIcon,
+  Loader2,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 import { blogApi } from '../../Service';
 import { usePermissions } from '../../utils/usePermissions';
@@ -29,6 +36,12 @@ export default function Blogs() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState(null);
+
+  // Cloudinary image upload & URL options state
+  const [imageTab, setImageTab] = useState('upload'); // 'upload' | 'url'
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [optimizingUrl, setOptimizingUrl] = useState(false);
+  const fileInputRef = useRef(null);
 
   const userRole = (role || user?.role || '').toLowerCase();
   const canManage =
@@ -45,6 +58,7 @@ export default function Blogs() {
     category: 'Technology',
     readTime: '5 min read',
     coverImage: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80',
+    coverImagePublicId: '',
     badge: 'Featured Insight',
     description: '',
     content: '',
@@ -83,11 +97,74 @@ export default function Blogs() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Handle direct file upload to Cloudinary
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    // Validate size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size exceeds 10MB limit. Please upload a smaller image.');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const res = await blogApi.uploadCoverImage(file);
+      if (res && res.url) {
+        setForm((prev) => ({
+          ...prev,
+          coverImage: res.url,
+          coverImagePublicId: res.public_id || '',
+        }));
+        toast.success('Cover image uploaded to Cloudinary CDN!');
+      } else {
+        throw new Error(res.message || 'Failed to upload image');
+      }
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      toast.error(err.message || 'Error uploading image to Cloudinary');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle optimizing/caching an external URL into Cloudinary
+  const handleOptimizeUrlToCloudinary = async () => {
+    if (!form.coverImage || !form.coverImage.trim()) {
+      toast.error('Please enter a valid image URL first');
+      return;
+    }
+
+    try {
+      setOptimizingUrl(true);
+      const res = await blogApi.uploadCoverImage(form.coverImage.trim(), true);
+      if (res && res.url) {
+        setForm((prev) => ({
+          ...prev,
+          coverImage: res.url,
+          coverImagePublicId: res.public_id || '',
+        }));
+        toast.success('External image cached & optimized on Cloudinary CDN!');
+      } else {
+        throw new Error(res.message || 'Could not cache image to Cloudinary');
+      }
+    } catch (err) {
+      console.error('Optimize URL failed:', err);
+      toast.error(err.message || 'Error caching image to Cloudinary');
+    } finally {
+      setOptimizingUrl(false);
+    }
+  };
+
   const handleSaveBlog = async (e) => {
     e.preventDefault();
     try {
       if (editingBlog) {
         await blogApi.updateBlog(editingBlog._id, form);
+        toast.success('Blog publication updated successfully!');
       } else {
         await blogApi.createBlog({
           ...form,
@@ -98,13 +175,14 @@ export default function Blogs() {
             avatarBg: 'bg-blue-600',
           },
         });
+        toast.success('New article published and synced live to official portal!');
       }
       setIsModalOpen(false);
       setEditingBlog(null);
       setForm(initialForm);
       fetchBlogs();
     } catch (err) {
-      alert(err.message || 'Error saving blog publication');
+      toast.error(err.message || 'Error saving blog publication');
     }
   };
 
@@ -112,9 +190,10 @@ export default function Blogs() {
     if (window.confirm(`Delete blog post '${title}'?`)) {
       try {
         await blogApi.deleteBlog(id);
+        toast.success('Blog post moved to Recycle Bin');
         fetchBlogs();
       } catch (err) {
-        alert(err.message || 'Error deleting blog');
+        toast.error(err.message || 'Error deleting blog');
       }
     }
   };
@@ -123,8 +202,11 @@ export default function Blogs() {
     setEditingBlog(b);
     setForm({
       ...b,
+      coverImagePublicId: b.coverImagePublicId || '',
       tags: Array.isArray(b.tags) ? b.tags.join(', ') : b.tags,
     });
+    // Auto select URL or Upload tab based on whether it is Cloudinary
+    setImageTab(b.coverImage?.includes('cloudinary.com') ? 'upload' : 'url');
     setIsModalOpen(true);
   };
 
@@ -412,17 +494,196 @@ export default function Blogs() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-mono font-bold uppercase text-slate-600 mb-1">
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  value={form.coverImage}
-                  onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
-                />
+              {/* Professional Cloudinary Image Selector (Upload File or Paste URL) */}
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-2.5">
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase text-slate-800">
+                      Publication Cover Image
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Upload directly to Cloudinary or paste an external image link
+                    </p>
+                  </div>
+
+                  {/* Mode Selector Tabs */}
+                  <div className="flex items-center gap-1 rounded-xl bg-slate-200/80 p-1 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setImageTab('upload')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                        imageTab === 'upload'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <UploadCloud size={13} />
+                      <span>Upload File</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageTab('url')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                        imageTab === 'url'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Link2 size={13} />
+                      <span>Paste URL</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* TAB 1: DIRECT FILE UPLOAD TO CLOUDINARY */}
+                {imageTab === 'upload' && (
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                    />
+
+                    <div
+                      onClick={() => !uploadingImage && fileInputRef.current?.click()}
+                      className={`group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition cursor-pointer ${
+                        uploadingImage
+                          ? 'border-blue-400 bg-blue-50/50 cursor-wait'
+                          : 'border-slate-300 bg-white hover:border-blue-500 hover:bg-blue-50/30'
+                      }`}
+                    >
+                      {uploadingImage ? (
+                        <div className="flex flex-col items-center py-2">
+                          <Loader2 size={28} className="animate-spin text-blue-600 mb-2" />
+                          <span className="text-xs font-bold text-blue-700 font-mono">
+                            Uploading to Cloudinary CDN...
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-0.5">
+                            Optimizing format and global delivery routes
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 group-hover:scale-110 transition">
+                            <UploadCloud size={20} />
+                          </div>
+                          <span className="text-xs font-bold text-slate-800">
+                            Click or drag image file here to upload
+                          </span>
+                          <span className="mt-1 text-[11px] text-slate-400 font-mono">
+                            JPEG, PNG, WEBP, GIF, SVG (Max: 10MB)
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: PASTE URL */}
+                {imageTab === 'url' && (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                      <input
+                        type="url"
+                        value={form.coverImage}
+                        onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                        placeholder="https://images.unsplash.com/... or https://..."
+                        className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-24 py-2 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                      {form.coverImage && !form.coverImage.includes('cloudinary.com') && (
+                        <button
+                          type="button"
+                          disabled={optimizingUrl}
+                          onClick={handleOptimizeUrlToCloudinary}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition cursor-pointer disabled:opacity-60"
+                          title="Save this external image to Cloudinary CDN for permanent high-speed hosting"
+                        >
+                          {optimizingUrl ? (
+                            <>
+                              <Loader2 size={10} className="animate-spin" />
+                              <span>Caching...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={10} />
+                              <span>Cloudinary</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      💡 Tip: Click "Cloudinary" to cache and serve external images directly from high-speed Cloudinary CDN.
+                    </p>
+                  </div>
+                )}
+
+                {/* ACTIVE IMAGE PREVIEW CARD */}
+                {form.coverImage && (
+                  <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+                    <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+                      <img
+                        src={form.coverImage}
+                        alt="Preview"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src =
+                            'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=400&q=80';
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {form.coverImage.includes('cloudinary.com') ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-emerald-700">
+                            <Check size={10} /> Cloudinary CDN Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 border border-sky-200 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-sky-700">
+                            <ExternalLink size={10} /> External Image Link
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate mt-1 font-mono">
+                        {form.coverImage}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <a
+                        href={form.coverImage}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition"
+                        title="View Full Resolution"
+                      >
+                        <Eye size={14} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            coverImage:
+                              'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80',
+                            coverImagePublicId: '',
+                          })
+                        }
+                        className="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                        title="Reset to Default Image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

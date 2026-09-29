@@ -25,6 +25,24 @@ export const blogApi = {
     return baseApi.put(`/blogs/${id}`, blogData);
   },
 
+  uploadCoverImage: async (fileOrUrl, isUrl = false) => {
+    if (isUrl) {
+      return baseApi.post('/blogs/upload-image', {
+        imageUrl: fileOrUrl,
+        cacheToCloudinary: true,
+      });
+    }
+
+    let formData;
+    if (fileOrUrl instanceof FormData) {
+      formData = fileOrUrl;
+    } else {
+      formData = new FormData();
+      formData.append('image', fileOrUrl);
+    }
+    return baseApi.post('/blogs/upload-image', formData);
+  },
+
   deleteBlog: async (id) => {
     return baseApi.delete(`/blogs/${id}`);
   },
